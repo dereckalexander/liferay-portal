@@ -770,9 +770,9 @@ public class CommerceOrderLocalServiceImpl
 
 			commerceOrderItemLocalService.addCommerceOrderItem(
 				userCommerceOrderId, guestCommerceOrderItem.getCPInstanceId(),
+				guestCommerceOrderItem.getJson(),
 				guestCommerceOrderItem.getQuantity(),
-				guestCommerceOrderItem.getShippedQuantity(),
-				guestCommerceOrderItem.getJson(), commerceContext,
+				guestCommerceOrderItem.getShippedQuantity(), commerceContext,
 				serviceContext);
 		}
 
@@ -933,7 +933,7 @@ public class CommerceOrderLocalServiceImpl
 			commerceOrderItemLocalService.addCommerceOrderItem(
 				newCommerceOrder.getCommerceOrderId(),
 				commerceOrderItem.getCPInstanceId(),
-				commerceOrderItem.getQuantity(), 0, commerceOrderItem.getJson(),
+				commerceOrderItem.getJson(), commerceOrderItem.getQuantity(), 0,
 				commerceContext, serviceContext);
 		}
 
@@ -2068,7 +2068,7 @@ public class CommerceOrderLocalServiceImpl
 				CommerceOrderFieldsConfiguration.class,
 				new GroupServiceSettingsLocator(
 					channelGroupId,
-					CommerceConstants.ORDER_FIELDS_SERVICE_NAME));
+					CommerceConstants.SERVICE_NAME_ORDER_FIELDS));
 
 		if ((commerceOrderFieldsConfiguration.accountCartMaxAllowed() > 0) &&
 			(pendingCommerceOrdersCount >=

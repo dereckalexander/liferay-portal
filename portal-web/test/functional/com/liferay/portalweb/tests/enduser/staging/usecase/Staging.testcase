@@ -3930,6 +3930,7 @@ definition {
 
 		WebContent.addWithStructureCP(
 			dmDocumentTitle = '''example (“PDF”).pdf''',
+			dmNavTab = "Documents and Media",
 			structureName = "Structure Name",
 			templateName = "Template Name",
 			webContentTitle = "WC WebContent Title",
@@ -4237,6 +4238,7 @@ definition {
 	@priority = "5"
 	test ViewSingleAssetPublication {
 		property portal.release = "false";
+		property test.name.skip.portal.instance = "Staging#ViewSingleAssetPublication";
 
 		Staging.openStagingAdmin(siteURLKey = "site-name");
 

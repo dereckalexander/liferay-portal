@@ -30,7 +30,7 @@ String collapseSwitchId = Validator.isNotNull(collapseSwitchName) ? collapseSwit
 					var link = document.getElementById('<%= linkId %>');
 
 					if (link) {
-						link.addEventListener('click', function (e) {
+						link.addEventListener('click', (e) => {
 							e.preventDefault();
 							Liferay.fire(eventsDefinitions.OPEN_MODAL, {
 								id: '<%= actionTargetId %>',
@@ -50,7 +50,7 @@ String collapseSwitchId = Validator.isNotNull(collapseSwitchName) ? collapseSwit
 				</c:when>
 				<c:when test="<%= Validator.isNotNull(actionIcon) %>">
 					<clay:link
-						elementClasses="btn btn-monospaced btn-primary btn-sm text-white"
+						cssClass="btn btn-monospaced btn-primary btn-sm text-white"
 						href='<%= (Validator.isNotNull(actionUrl) && Validator.isNull(actionTargetId)) ? actionUrl : "#" %>'
 						icon="<%= actionIcon %>"
 						id="<%= linkId %>"
@@ -71,8 +71,8 @@ String collapseSwitchId = Validator.isNotNull(collapseSwitchName) ? collapseSwit
 								'<%= randomNamespace %>collapse'
 							);
 
-							[toggleSwitch, toggleLabel].forEach(function (el) {
-								el.addEventListener('click', function (e) {
+							[toggleSwitch, toggleLabel].forEach((el) => {
+								el.addEventListener('click', (e) => {
 									e.preventDefault();
 
 									if (collapseClickable) {
@@ -85,7 +85,7 @@ String collapseSwitchId = Validator.isNotNull(collapseSwitchName) ? collapseSwit
 
 									collapseClickable = false;
 
-									setTimeout(function () {
+									setTimeout(() => {
 										collapseClickable = true;
 									}, 400);
 								});
@@ -126,5 +126,5 @@ String collapseSwitchId = Validator.isNotNull(collapseSwitchName) ? collapseSwit
 		</h4>
 	</c:if>
 
-	<div class="collapse<%= collapsed ? StringPool.BLANK : StringPool.SPACE + "show" %>" id="<%= randomNamespace %>collapse">
+	<div class="collapse<%= collapsed ? StringPool.BLANK : " show" %>" id="<%= randomNamespace %>collapse">
 		<div class="<%= "card-body" + (Validator.isNotNull(bodyClasses) ? StringPool.SPACE + bodyClasses : StringPool.BLANK) %>">

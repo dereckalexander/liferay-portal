@@ -17,7 +17,7 @@
 <%@ include file="/info_box/init.jsp" %>
 
 <%
-String linkId = PortalUtil.generateRandomKey(request, "info-box") + StringPool.UNDERLINE + "action-link";
+String linkId = PortalUtil.generateRandomKey(request, "info-box") + "_action-link";
 %>
 
 <div class="<%= "info-box" + (Validator.isNotNull(elementClasses) ? StringPool.SPACE + elementClasses : StringPool.BLANK) %>">
@@ -32,7 +32,7 @@ String linkId = PortalUtil.generateRandomKey(request, "info-box") + StringPool.U
 					var link = document.getElementById('<%= linkId %>');
 
 					if (link) {
-						link.addEventListener('click', function (e) {
+						link.addEventListener('click', (e) => {
 							e.preventDefault();
 							Liferay.fire(eventsDefinitions.OPEN_MODAL, {
 								id: '<%= actionTargetId %>',

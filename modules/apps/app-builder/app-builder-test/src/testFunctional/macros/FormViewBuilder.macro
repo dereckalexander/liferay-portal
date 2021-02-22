@@ -94,8 +94,50 @@ definition {
 		AppBuilderAdmin.gotoBack();
 	}
 
+	macro addObjectByDragAndDrop {
+		Pause(locator1 = "10000");
+
+		var key_fieldLabel = "${fieldType}";
+
+		DragAndDrop.javaScriptDragAndDropToObject(
+			locator1 = "FormViewBuilder#OBJECT_FIELD_LABEL",
+			locator2 = "FormViewBuilder#EMPTY_FORM_FIELD",
+			value1 = "${fieldType}");
+	}
+
 	macro addRule {
 		Click(locator1 = "FormViewBuilder#RULE_ADD_BUTTON");
+	}
+
+	macro addSelectTypeFieldOptions {
+		var key_rowNumber = "${rowNumber}";
+
+		Type(
+			locator1 = "FormViewBuilder#OPTIONS_OPTION_VALUE_FIELD",
+			value1 = "${optionValue}");
+	}
+
+	macro assertFieldIsNotPresentInFormBuilder {
+		AssertElementNotPresent(
+			locator1 = "FormViewBuilder#FIELD_IN_FORM_BUILDER",
+			value1 = "${key_fieldLabel}");
+	}
+
+	macro assertHelpTextPresent {
+		AssertTextEquals(
+			key_fieldName = "${fieldName}",
+			locator1 = "FormViewBuilder#HELP_TEXT_AT_APP_DEPLOYED",
+			value1 = "${fieldValue}");
+	}
+
+	macro assertOptionIsPresentInFormBuilder {
+		AssertElementPresent(
+			locator1 = "FormViewBuilder#OPTIONS_PLACED_IN_FORM_BUILDER",
+			value1 = "${key_optionLabel}");
+	}
+
+	macro assertRuleSaveButtonIsDisabled {
+		AssertElementPresent(locator1 = "FormViewBuilder#RULE_BUILDER_SAVE_BUTTON_DISABLED");
 	}
 
 	macro assertTextPresent {
@@ -123,10 +165,26 @@ definition {
 			locator1 = "FormViewBuilder#SWITCHER_OPTION");
 	}
 
+	macro clickActionMenuFieldset {
+		Click(locator1 = "FormViewBuilder#FIELD_ELLIPSIS");
+	}
+
+	macro clickActionMenuFieldsetEdit {
+		Click(
+			key_selectAction = "${selectAction}",
+			locator1 = "FormViewBuilder#FIELD_ELLIPSIS_ACTION_FIELDSET");
+	}
+
 	macro clickFieldLabel {
 		Click(
 			locator1 = "FormViewBuilder#FIELD_LABEL",
 			value1 = "${fieldLabel}");
+	}
+
+	macro clickFieldLabelFromFieldset {
+		Click(
+			locator1 = "FormViewBuilder#FIELD_FROM_FIELDSET",
+			value1 = "${key_fieldLabel}");
 	}
 
 	macro closeSidebar() {
@@ -245,6 +303,16 @@ definition {
 			value1 = "${fieldValue}");
 	}
 
+	macro editDisabledFieldSetEntry {
+		var key_RowNumber = "${rowNumber}";
+
+		Click(locator1 = "FormViewBuilder#FIELD_SET_DISABLED_ELLIPSIS_ACTION");
+
+		Click(
+			key_selectAction = "${selectAction}",
+			locator1 = "FormViewBuilder#FIELD_ELLIPSIS_ACTION");
+	}
+
 	macro editFieldInObject {
 		Click(
 			key_fieldName = "${fieldName}",
@@ -346,6 +414,22 @@ definition {
 			value1 = "${key_fieldLabel}");
 	}
 
+	macro fieldEllipsisActionFieldset {
+		Click(
+			locator1 = "FormViewBuilder#FIELD_FROM_FIELDSET",
+			value1 = "${key_fieldLabel}");
+
+		Click(locator1 = "FormViewBuilder#FIELD_ELLIPSIS_FIELDSET");
+
+		Click(
+			key_selectAction = "${selectAction}",
+			locator1 = "FormViewBuilder#FIELD_ELLIPSIS_ACTION_FIELDSET");
+
+		AssertElementNotPresent(
+			locator1 = "FormViewBuilder#FIELD_FROM_FIELDSET",
+			value1 = "${key_fieldLabel}");
+	}
+
 	macro fieldEllipsisDelete {
 		Click(
 			locator1 = "FormViewBuilder#FIELD_LABEL",
@@ -382,8 +466,18 @@ definition {
 		AppBuilderAdmin.openItem(itemName = "${formViewName}");
 	}
 
+	macro openFormViewFromFormList {
+		Click(
+			key_itemName = "${formViewName}",
+			locator1 = "AppBuilder#ITEM_ON_THE_TABLE_CLICK");
+	}
+
 	macro openSidebar() {
 		Click(locator1 = "FormViewBuilder#OPEN_SIDEBAR");
+	}
+
+	macro propagateChange {
+		Click(locator1 = "FormViewBuilder#PROPAGATE_CHANGES");
 	}
 
 	macro ruleSave {
@@ -392,6 +486,10 @@ definition {
 
 	macro save {
 		AppBuilderAdmin.save();
+	}
+
+	macro saveButtonFieldset {
+		Click(locator1 = "FormViewBuilder#FIELD_SET_SAVE_BUTTON");
 	}
 
 	macro searchObjectField {
@@ -488,6 +586,10 @@ definition {
 			value1 = "${fieldValue}");
 	}
 
+	macro setFieldRepeatable {
+		FormViewBuilder.checkSwitcher(propertyName = "repeatable");
+	}
+
 	macro setFieldRequired {
 		FormViewBuilder.checkSwitcher(propertyName = "required");
 	}
@@ -558,7 +660,7 @@ definition {
 
 		Click(locator1 = "FormViewBuilder#RULE_BUILDER_GO_BACK");
 
-		FormViewBuilder.addFieldByDoubleClick(fieldType = "${fieldType2}");
+		FormViewBuilder.addFieldByDoubleClick(fieldType = "${fieldType3}");
 
 		for (var number : list "1,2,3") {
 			FormViewBuilder.editOptionsRow(

@@ -346,6 +346,14 @@ public class DDMFormField implements Serializable {
 		return HashUtil.hash(hash, _nestedDDMFormFields);
 	}
 
+	public boolean hasProperty(String propertyKey) {
+		if (_properties.containsKey(propertyKey)) {
+			return true;
+		}
+
+		return false;
+	}
+
 	public boolean isLocalizable() {
 		return MapUtil.getBoolean(_properties, "localizable");
 	}
@@ -370,12 +378,29 @@ public class DDMFormField implements Serializable {
 		return MapUtil.getBoolean(_properties, "showLabel", true);
 	}
 
+	/**
+	 * This method returns <code>true</code> if the DDMFormField is not supposed
+	 * to hold value/data, i.e. its "dataType" property is blank or
+	 * <code>null</code>. Transient fields can be considered structural fields
+	 * like Liferay's native separator or fieldset fields.
+	 *
+	 * @return boolean
+	 * @review
+	 */
 	public boolean isTransient() {
 		if (Validator.isNull(getDataType())) {
 			return true;
 		}
 
 		return false;
+	}
+
+	public boolean isVisualProperty() {
+		return MapUtil.getBoolean(_properties, "visualProperty");
+	}
+
+	public void removeProperty(String propertyKey) {
+		_properties.remove(propertyKey);
 	}
 
 	public void setDataType(String dataType) {
@@ -476,6 +501,10 @@ public class DDMFormField implements Serializable {
 
 	public void setVisibilityExpression(String visibilityExpression) {
 		_properties.put("visibilityExpression", visibilityExpression);
+	}
+
+	public void setVisualProperty(boolean visualProperty) {
+		_properties.put("visualProperty", visualProperty);
 	}
 
 	private static final String _DATA_SOURCE_TYPE_MANUAL = "manual";

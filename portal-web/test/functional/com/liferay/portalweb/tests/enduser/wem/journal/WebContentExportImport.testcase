@@ -207,7 +207,7 @@ definition {
 
 		WebContentNavigator.gotoEditStructure(structureName = "Structure Name");
 
-		DataEngine.deleteField(fieldFieldLabel = "Text");
+		DataEngine.delete(fieldFieldLabel = "Text");
 
 		DataEngine.addField(
 			fieldFieldLabel = "Web Content",
@@ -677,7 +677,7 @@ definition {
 		}
 	}
 
-	@description = "This test ensures that all the default values for an imported structure can be reset."
+	@description = "This is a test for LPS-96545. This test \"Ensures that all the default values for an imported structure can be reset\" and \"Once the user has imported a structure by LAR (imported/exported), Validate if is possible to cancel the reset operation of the default values of all field of the Web Content Structure and the data that inputted is discarded\""
 	@priority = "4"
 	test ResetImportedStructureDefaultValues {
 		property test.name.skip.portal.instance = "WebContentExportImport#ResetImportedStructureDefaultValues";
@@ -701,7 +701,7 @@ definition {
 
 		WebContentStructures.editStructureDefaultValuesCP(structureName = "WC Structure Name");
 
-		WebContent.addWithStructureCP(webContentText = "(Enter Text Here)");
+		WebContent.addWithStructureCP(webContentText = "Enter Text Here");
 
 		PortletEntry.save();
 
@@ -751,6 +751,16 @@ definition {
 
 		WebContentStructures.resetStructureDefaultValuesCP(
 			assetTitle = "Blogs Entry Title",
+			cancel = "true",
+			templateName = "WC Template Name");
+
+		AssertTextEquals.assertValue(
+			key_fieldFieldLabel = "Text",
+			locator1 = "WCEditWebContent#TEXT_INPUT",
+			value1 = "Enter Text Here");
+
+		WebContentStructures.resetStructureDefaultValuesCP(
+			assetTitle = "Blogs Entry Title",
 			templateName = "WC Template Name");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
@@ -759,10 +769,9 @@ definition {
 
 		Button.clickPublish();
 
-		AssertTextEquals(
-			key_fieldFieldLabel = "Text",
-			locator1 = "WCEditWebContent#FIELD_REQUIRED_ALERT",
-			value1 = "This field is required.");
+		AssertElementPresent(locator1 = "TextInput#REQUIRED_ALERT");
+
+		Alert.viewErrorMessage(errorMessage = "Please enter a valid title for the default language: en-US");
 	}
 
 }

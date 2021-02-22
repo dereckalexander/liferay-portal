@@ -474,6 +474,12 @@
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
+		<attribute>
+			<description><![CDATA[A CSS class for styling the panel-header-link.]]></description>
+			<name>panelHeaderLinkCssClass</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
 		<dynamic-attributes>true</dynamic-attributes>
 	</tag>
 	<tag>
@@ -1338,6 +1344,11 @@
 		<name>script</name>
 		<tag-class>com.liferay.taglib.aui.ScriptTag</tag-class>
 		<body-content>JSP</body-content>
+		<attribute>
+			<name>load</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
 		<attribute>
 			<description><![CDATA[A position for the script.]]></description>
 			<name>position</name>

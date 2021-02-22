@@ -202,60 +202,6 @@ definition {
 	}
 
 	@priority = "4"
-	test AddDocumentTypes {
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMNavigator.gotoDocumentType();
-
-		DMDocumentType.add(
-			dmDocumentTypeDescription = "DM Document Type 1 Description",
-			dmDocumentTypeFieldNames = "Text",
-			dmDocumentTypeName = "DM Document Type 1 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMDocumentType.viewMenulistOption(dmDocumentTypeName = "DM Document Type 1 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMNavigator.gotoDocumentType();
-
-		DMDocumentType.add(
-			dmDocumentTypeDescription = "DM Document Type 2 Description",
-			dmDocumentTypeFieldNames = "Text",
-			dmDocumentTypeName = "DM Document Type 2 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMDocumentType.viewMenulistOption(dmDocumentTypeName = "DM Document Type 2 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMNavigator.gotoDocumentType();
-
-		DMDocumentType.add(
-			dmDocumentTypeDescription = "DM Document Type 3 Description",
-			dmDocumentTypeFieldNames = "Text",
-			dmDocumentTypeName = "DM Document Type 3 Name");
-
-		ProductMenu.gotoPortlet(
-			category = "Content &amp; Data",
-			portlet = "Documents and Media");
-
-		DMDocumentType.viewMenulistOption(dmDocumentTypeName = "DM Document Type 3 Name");
-	}
-
-	@priority = "4"
 	test AddFolderDocumentDuplicate {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
@@ -1130,6 +1076,10 @@ definition {
 			dmFolderName = "DM Folder1 Name",
 			locationFieldName = "true");
 
+		Navigator.gotoPage(pageName = "Documents and Media Page");
+
+		DMNavigator.gotoFolder(dmFolderName = "DM Folder1 Name");
+
 		DMDocument.moveToFolderPG(
 			dmDocumentTitle = "DM Document Title",
 			dmFolderName = "DM Folder2 Name");
@@ -1796,7 +1746,7 @@ definition {
 			dmDocumentTitle = "Document_1.doc");
 
 		AssertVisible(
-			key_dmDocumentFileName = "Document_1.jpg",
+			key_dmDocumentFileName = "Document_2.jpg",
 			locator1 = "DocumentsAndMediaDocument#DOCUMENT_DETAILS_IMAGE_PREVIEW");
 	}
 

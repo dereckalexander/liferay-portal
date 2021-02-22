@@ -115,6 +115,25 @@ public class GetTrafficSourcesMVCResourceCommandTest {
 					"/api/1.0/pages/acquisition-channels",
 					() -> JSONUtil.put(
 						"organic", 3192L
+					).put(
+						"referral", 2L
+					).put(
+						"social", 385L
+					).toString()
+				).put(
+					"/api/1.0/pages/page-referrer-hosts",
+					() -> JSONUtil.put(
+						"slickdeals.net", 2.0
+					).toString()
+				).put(
+					"/api/1.0/pages/page-referrers",
+					() -> JSONUtil.put(
+						"https://slickdeals.net/credit-card-offers/", 2.0
+					).toString()
+				).put(
+					"/api/1.0/pages/social-page-referrers",
+					() -> JSONUtil.put(
+						"facebook", 385.0
 					).toString()
 				).put(
 					"/api/seo/1.0/traffic-sources",
@@ -193,11 +212,9 @@ public class GetTrafficSourcesMVCResourceCommandTest {
 					JSONObject jsonObject1 = jsonArray.getJSONObject(0);
 
 					Assert.assertEquals("organic", jsonObject1.get("name"));
-
 					Assert.assertEquals(
-						100.00D, Double.valueOf(jsonObject1.getString("share")),
+						89.20D, Double.valueOf(jsonObject1.getString("share")),
 						0.0);
-
 					Assert.assertEquals(3192, jsonObject1.get("value"));
 
 					JSONArray countryKeywordsJSONArray =
@@ -227,26 +244,54 @@ public class GetTrafficSourcesMVCResourceCommandTest {
 
 					JSONObject jsonObject2 = jsonArray.getJSONObject(1);
 
-					Assert.assertEquals("referral", jsonObject2.get("name"));
+					Assert.assertEquals("social", jsonObject2.get("name"));
+					Assert.assertEquals(385, jsonObject2.getInt("value"));
 
-					Assert.assertEquals(0, jsonObject2.getInt("value"));
+					JSONArray referringSocialMediaJSONArray =
+						jsonObject2.getJSONArray("referringSocialMedia");
+
+					JSONObject referringSocialMediaJSONObject =
+						referringSocialMediaJSONArray.getJSONObject(0);
+
+					Assert.assertEquals(
+						"facebook", referringSocialMediaJSONObject.get("name"));
+					Assert.assertEquals(
+						385,
+						referringSocialMediaJSONObject.get("trafficAmount"));
 
 					JSONObject jsonObject3 = jsonArray.getJSONObject(2);
 
-					Assert.assertEquals("social", jsonObject3.get("name"));
+					Assert.assertEquals("referral", jsonObject3.get("name"));
+					Assert.assertEquals(2L, jsonObject3.getInt("value"));
 
-					Assert.assertEquals(0, jsonObject3.getInt("value"));
+					JSONArray referringDomainsJSONArray =
+						jsonObject3.getJSONArray("referringDomains");
+
+					JSONObject referringDomainsJSONObject =
+						referringDomainsJSONArray.getJSONObject(0);
+
+					Assert.assertEquals(
+						"slickdeals.net",
+						referringDomainsJSONObject.get("url"));
+
+					JSONArray referringPagesJSONArray =
+						jsonObject3.getJSONArray("referringPages");
+
+					JSONObject referringPagesJSONObject =
+						referringPagesJSONArray.getJSONObject(0);
+
+					Assert.assertEquals(
+						"https://slickdeals.net/credit-card-offers/",
+						referringPagesJSONObject.get("url"));
 
 					JSONObject jsonObject4 = jsonArray.getJSONObject(3);
 
 					Assert.assertEquals("paid", jsonObject4.get("name"));
-
 					Assert.assertEquals(0, jsonObject4.getInt("value"));
 
 					JSONObject jsonObject5 = jsonArray.getJSONObject(4);
 
 					Assert.assertEquals("direct", jsonObject5.get("name"));
-
 					Assert.assertEquals(0, jsonObject5.getInt("value"));
 				});
 		}

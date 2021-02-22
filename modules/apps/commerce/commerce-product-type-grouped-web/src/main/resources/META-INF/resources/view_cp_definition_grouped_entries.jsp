@@ -103,7 +103,7 @@ renderResponse.setTitle(cpDefinition.getName(themeDisplay.getLanguageId()));
 </liferay-frontend:management-bar>
 
 <div id="<portlet:namespace />cpDefinitionGroupedEntriesContainer">
-	<div class="closed container-fluid container-fluid-max-xl sidenav-container sidenav-right" id="<portlet:namespace />infoPanelId">
+	<div class="closed sidenav-container sidenav-right" id="<portlet:namespace />infoPanelId">
 		<c:if test="<%= cpDefinitionGroupedEntriesDisplayContext.isShowInfoPanel() %>">
 			<liferay-portlet:resourceURL copyCurrentRenderParameters="<%= false %>" id="/cp_definitions/cp_definition_grouped_entry_info_panel" var="sidebarPanelURL" />
 
@@ -209,7 +209,7 @@ renderResponse.setTitle(cpDefinition.getName(themeDisplay.getLanguageId()));
 <aui:script use="liferay-item-selector-dialog">
 	window.document
 		.querySelector('#<portlet:namespace />addDefinitionGroupedEntry')
-		.addEventListener('click', function (event) {
+		.addEventListener('click', (event) => {
 			event.preventDefault();
 
 			var itemSelectorDialog = new A.LiferayItemSelectorDialog({

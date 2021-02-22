@@ -17,13 +17,15 @@ package com.liferay.commerce.address.web.internal.frontend.taglib.servlet.taglib
 import com.liferay.commerce.address.web.internal.display.context.CommerceRegionsDisplayContext;
 import com.liferay.commerce.address.web.internal.portlet.action.ActionHelper;
 import com.liferay.commerce.address.web.internal.servlet.taglib.ui.constants.CommerceCountryScreenNavigationConstants;
-import com.liferay.commerce.model.CommerceCountry;
-import com.liferay.commerce.service.CommerceRegionService;
+import com.liferay.commerce.constants.CommerceConstants;
 import com.liferay.frontend.taglib.servlet.taglib.ScreenNavigationCategory;
 import com.liferay.frontend.taglib.servlet.taglib.ScreenNavigationEntry;
 import com.liferay.frontend.taglib.servlet.taglib.util.JSPRenderer;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Country;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
+import com.liferay.portal.kernel.service.RegionService;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -55,8 +57,7 @@ import org.osgi.service.component.annotations.Reference;
 	service = {ScreenNavigationCategory.class, ScreenNavigationEntry.class}
 )
 public class CommerceCountryRegionsScreenNavigationCategory
-	implements ScreenNavigationCategory,
-			   ScreenNavigationEntry<CommerceCountry> {
+	implements ScreenNavigationCategory, ScreenNavigationEntry<Country> {
 
 	@Override
 	public String getCategoryKey() {
@@ -85,8 +86,8 @@ public class CommerceCountryRegionsScreenNavigationCategory
 	}
 
 	@Override
-	public boolean isVisible(User user, CommerceCountry commerceCountry) {
-		if (commerceCountry == null) {
+	public boolean isVisible(User user, Country country) {
+		if (country == null) {
 			return false;
 		}
 
@@ -108,25 +109,30 @@ public class CommerceCountryRegionsScreenNavigationCategory
 
 		CommerceRegionsDisplayContext commerceRegionsDisplayContext =
 			new CommerceRegionsDisplayContext(
-				_actionHelper, _commerceRegionService, renderRequest,
-				renderResponse);
+				_actionHelper, _portletResourcePermission, _regionService,
+				renderRequest, renderResponse);
 
 		renderRequest.setAttribute(
 			WebKeys.PORTLET_DISPLAY_CONTEXT, commerceRegionsDisplayContext);
 
 		_jspRenderer.renderJSP(
 			_servletContext, httpServletRequest, httpServletResponse,
-			"/country/regions.jsp");
+			"/commerce_country/commerce_regions.jsp");
 	}
 
 	@Reference
 	private ActionHelper _actionHelper;
 
 	@Reference
-	private CommerceRegionService _commerceRegionService;
+	private JSPRenderer _jspRenderer;
+
+	@Reference(
+		target = "(resource.name=" + CommerceConstants.RESOURCE_NAME_ADDRESS + ")"
+	)
+	private PortletResourcePermission _portletResourcePermission;
 
 	@Reference
-	private JSPRenderer _jspRenderer;
+	private RegionService _regionService;
 
 	@Reference(
 		target = "(osgi.web.symbolicname=com.liferay.commerce.address.web)"

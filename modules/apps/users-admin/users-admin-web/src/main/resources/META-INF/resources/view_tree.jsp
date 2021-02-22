@@ -74,14 +74,20 @@ if (organization != null) {
 		SearchContainer<Object> searchContainer = viewTreeManagementToolbarDisplayContext.getSearchContainer();
 		%>
 
-		<clay:management-toolbar-v2
+		<clay:management-toolbar
 			actionDropdownItems="<%= viewTreeManagementToolbarDisplayContext.getActionDropdownItems() %>"
+			additionalProps='<%=
+				HashMapBuilder.<String, Object>put(
+					"basePortletURL", String.valueOf(renderResponse.createRenderURL())
+				).build()
+			%>'
 			clearResultsURL="<%= viewTreeManagementToolbarDisplayContext.getClearResultsURL() %>"
 			componentId="viewTreeManagementToolbar"
 			creationMenu="<%= viewTreeManagementToolbarDisplayContext.getCreationMenu() %>"
 			filterDropdownItems="<%= viewTreeManagementToolbarDisplayContext.getFilterDropdownItems() %>"
 			filterLabelItems="<%= viewTreeManagementToolbarDisplayContext.getFilterLabelItems() %>"
 			itemsTotal="<%= searchContainer.getTotal() %>"
+			propsTransformer="js/ViewTreeManagementToolbarPropsTransformer"
 			searchActionURL="<%= viewTreeManagementToolbarDisplayContext.getSearchActionURL() %>"
 			searchContainerId="organizationUsers"
 			searchFormName="searchFm"
@@ -239,15 +245,15 @@ if (organization != null) {
 		selectUsers: selectUsers,
 	};
 
-	Liferay.componentReady('viewTreeManagementToolbar').then(function (
-		managementToolbar
-	) {
-		managementToolbar.on('creationMenuItemClicked', function (event) {
-			var itemData = event.data.item.data;
+	Liferay.componentReady('viewTreeManagementToolbar').then(
+		(managementToolbar) => {
+			managementToolbar.on('creationMenuItemClicked', (event) => {
+				var itemData = event.data.item.data;
 
-			if (itemData && itemData.action && ACTIONS[itemData.action]) {
-				ACTIONS[itemData.action](itemData.organizationId);
-			}
-		});
-	});
+				if (itemData && itemData.action && ACTIONS[itemData.action]) {
+					ACTIONS[itemData.action](itemData.organizationId);
+				}
+			});
+		}
+	);
 </aui:script>

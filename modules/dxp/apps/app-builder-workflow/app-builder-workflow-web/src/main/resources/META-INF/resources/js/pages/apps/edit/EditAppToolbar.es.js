@@ -20,7 +20,7 @@ import EditAppContext, {
 	UPDATE_APP,
 	UPDATE_NAME,
 } from 'app-builder-web/js/pages/apps/edit/EditAppContext.es';
-import {errorToast} from 'app-builder-web/js/utils/toast.es';
+import {errorToast} from 'data-engine-js-components-web/js/utils/toast.es';
 import {TranslationManager} from 'data-engine-taglib';
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 
@@ -34,6 +34,7 @@ export default function EditAppToolbar({isSaving, onCancel, onSave}) {
 		dispatch,
 		setAppChangesModalVisible,
 		setDeployModalVisible,
+		setMissingFieldsModalVisible,
 		state: {app},
 	} = useContext(EditAppContext);
 	const {availableLanguageIds, defaultLanguageId} = config.dataObject;
@@ -178,6 +179,9 @@ export default function EditAppToolbar({isSaving, onCancel, onSave}) {
 						onClick={
 							app.active
 								? onClickUndeploy
+								: config.formView.missingRequiredFields
+										?.customField && appId
+								? () => setMissingFieldsModalVisible(true)
 								: () => setDeployModalVisible(true)
 						}
 						small

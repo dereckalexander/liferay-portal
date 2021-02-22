@@ -13,18 +13,20 @@
  */
 
 import ClayButton from '@clayui/button';
+import {
+	errorToast,
+	successToast,
+} from 'data-engine-js-components-web/js/utils/toast.es';
 import {createResourceURL, fetch} from 'frontend-js-web';
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 
 import {AppContext} from '../../AppContext.es';
-import Button from '../../components/button/Button.es';
 import {ControlMenuBase} from '../../components/control-menu/ControlMenu.es';
 import useDataDefinition from '../../hooks/useDataDefinition.es';
 import withDDMForm, {
 	useDDMFormSubmit,
 	useDDMFormValidation,
 } from '../../hooks/withDDMForm.es';
-import {errorToast, successToast} from '../../utils/toast.es';
 
 export const EditEntry = ({
 	dataDefinitionId,
@@ -42,9 +44,7 @@ export const EditEntry = ({
 		showFormView,
 		showTableView,
 	} = useContext(AppContext);
-	const {availableLanguageIds, defaultLanguageId} = useDataDefinition(
-		dataDefinitionId
-	);
+	const {defaultLanguageId} = useDataDefinition(dataDefinitionId);
 	const [submitting, setSubmitting] = useState(false);
 
 	const isFormViewOnly = showFormView && !showTableView;
@@ -65,11 +65,7 @@ export const EditEntry = ({
 		setSubmitting(false);
 	};
 
-	const validateForm = useDDMFormValidation(
-		ddmForm,
-		defaultLanguageId,
-		availableLanguageIds
-	);
+	const validateForm = useDDMFormValidation(ddmForm, defaultLanguageId);
 
 	const onSubmit = useCallback(
 		(event) => {
@@ -176,14 +172,14 @@ export const EditEntry = ({
 			/>
 
 			<ClayButton.Group className="app-builder-form-buttons" spaced>
-				<Button disabled={submitting} onClick={onSubmit}>
+				<ClayButton disabled={submitting} onClick={onSubmit}>
 					{Liferay.Language.get('save')}
-				</Button>
+				</ClayButton>
 
 				{!isFormViewOnly && (
-					<Button displayType="secondary" onClick={onCancel}>
+					<ClayButton displayType="secondary" onClick={onCancel}>
 						{Liferay.Language.get('cancel')}
-					</Button>
+					</ClayButton>
 				)}
 			</ClayButton.Group>
 		</>

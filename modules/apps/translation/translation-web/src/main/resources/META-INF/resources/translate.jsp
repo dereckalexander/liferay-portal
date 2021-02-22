@@ -116,10 +116,9 @@ renderResponse.setTitle(translateDisplayContext.getTitle());
 							}
 
 							String infoFieldSetLabel = translateDisplayContext.getInfoFieldSetLabel(infoFieldSetEntry, locale);
-
-							if (Validator.isNotNull(infoFieldSetLabel)) {
 						%>
 
+							<c:if test="<%= Validator.isNotNull(infoFieldSetLabel) %>">
 								<clay:row>
 									<clay:col
 										md="6"
@@ -137,10 +136,9 @@ renderResponse.setTitle(translateDisplayContext.getTitle());
 										</div>
 									</clay:col>
 								</clay:row>
+							</c:if>
 
 							<%
-							}
-
 							for (InfoField<TextInfoFieldType> infoField : infoFields) {
 								boolean html = translateDisplayContext.getBooleanValue(infoField, TextInfoFieldType.HTML);
 								String label = translateDisplayContext.getInfoFieldLabel(infoField);
@@ -216,7 +214,7 @@ renderResponse.setTitle(translateDisplayContext.getTitle());
 <script>
 	var saveDraftBtn = document.getElementById('<portlet:namespace />saveDraftBtn');
 
-	saveDraftBtn.addEventListener('click', function () {
+	saveDraftBtn.addEventListener('click', () => {
 		var workflowActionInput = document.getElementById(
 			'<portlet:namespace />workflowAction'
 		);

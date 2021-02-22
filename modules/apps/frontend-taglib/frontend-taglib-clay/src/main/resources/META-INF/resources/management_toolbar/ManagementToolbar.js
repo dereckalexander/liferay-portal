@@ -42,8 +42,12 @@ function ManagementToolbar({
 	onActionButtonClick = () => {},
 	onCheckboxChange = () => {},
 	onClearSelectionButtonClick = () => {},
+	onCreateButtonClick = () => {},
+	onCreationMenuItemClick = () => {},
 	onInfoButtonClick = () => {},
+	onFilterDropdownItemClick = () => {},
 	onSelectAllButtonClick = () => {},
+	onShowMoreButtonClick,
 	searchActionURL,
 	searchContainerId,
 	searchData,
@@ -71,74 +75,77 @@ function ManagementToolbar({
 		<>
 			<ClayManagementToolbar active={active}>
 				<ClayManagementToolbar.ItemList>
-					<SelectionControls
-						actionDropdownItems={actionDropdownItems}
-						active={active}
-						clearSelectionURL={clearSelectionURL}
-						disabled={disabled}
-						initialCheckboxStatus={initialCheckboxStatus}
-						initialSelectAllButtonVisible={
-							initialSelectAllButtonVisible
-						}
-						initialSelectedItems={initialSelectedItems}
-						itemsTotal={itemsTotal}
-						onCheckboxChange={onCheckboxChange}
-						onClearButtonClick={onClearSelectionButtonClick}
-						onSelectAllButtonClick={onSelectAllButtonClick}
-						searchContainerId={searchContainerId}
-						selectAllURL={selectAllURL}
-						selectable={selectable}
-						setActionDropdownItems={setActionDropdownItems}
-						setActive={setActive}
-						supportsBulkActions={supportsBulkActions}
-					/>
+					{selectable && (
+						<SelectionControls
+							actionDropdownItems={actionDropdownItems}
+							active={active}
+							clearSelectionURL={clearSelectionURL}
+							disabled={disabled}
+							initialCheckboxStatus={initialCheckboxStatus}
+							initialSelectAllButtonVisible={
+								initialSelectAllButtonVisible
+							}
+							initialSelectedItems={initialSelectedItems}
+							itemsTotal={itemsTotal}
+							onCheckboxChange={onCheckboxChange}
+							onClearButtonClick={onClearSelectionButtonClick}
+							onSelectAllButtonClick={onSelectAllButtonClick}
+							searchContainerId={searchContainerId}
+							selectAllURL={selectAllURL}
+							setActionDropdownItems={setActionDropdownItems}
+							setActive={setActive}
+							supportsBulkActions={supportsBulkActions}
+						/>
+					)}
 
 					{!active && (
 						<FilterOrderControls
 							disabled={disabled}
 							filterDropdownItems={filterDropdownItems}
+							onFilterDropdownItemClick={
+								onFilterDropdownItemClick
+							}
 							sortingURL={sortingURL}
 						/>
 					)}
 				</ClayManagementToolbar.ItemList>
-				{active ? (
-					<ActionControls
-						actionDropdownItems={actionDropdownItems}
+				{!active && showSearch && (
+					<SearchControls
 						disabled={disabled}
-						onActionButtonClick={onActionButtonClick}
+						searchActionURL={searchActionURL}
+						searchData={searchData}
+						searchFormMethod={searchFormMethod}
+						searchFormName={searchFormName}
+						searchInputName={searchInputName}
+						searchMobile={searchMobile}
+						searchValue={searchValue}
+						setSearchMobile={setSearchMobile}
 					/>
-				) : (
-					<>
-						{showSearch && (
-							<SearchControls
+				)}
+				<ClayManagementToolbar.ItemList>
+					{!active && showSearch && (
+						<SearchControls.ShowMobileButton
+							disabled={disabled}
+							setSearchMobile={setSearchMobile}
+						/>
+					)}
+					{showInfoButton && (
+						<InfoPanelControl
+							disabled={disabled}
+							infoPanelId={infoPanelId}
+							onInfoButtonClick={onInfoButtonClick}
+						/>
+					)}
+					{active ? (
+						<>
+							<ActionControls
+								actionDropdownItems={actionDropdownItems}
 								disabled={disabled}
-								searchActionURL={searchActionURL}
-								searchData={searchData}
-								searchFormMethod={searchFormMethod}
-								searchFormName={searchFormName}
-								searchInputName={searchInputName}
-								searchMobile={searchMobile}
-								searchValue={searchValue}
-								setSearchMobile={setSearchMobile}
+								onActionButtonClick={onActionButtonClick}
 							/>
-						)}
-
-						<ClayManagementToolbar.ItemList>
-							{showSearch && (
-								<SearchControls.ShowMobileButton
-									disabled={disabled}
-									setSearchMobile={setSearchMobile}
-								/>
-							)}
-
-							{showInfoButton && (
-								<InfoPanelControl
-									disabled={disabled}
-									infoPanelId={infoPanelId}
-									onInfoButtonClick={onInfoButtonClick}
-								/>
-							)}
-
+						</>
+					) : (
+						<>
 							{viewTypeItems && (
 								<ClayManagementToolbar.Item>
 									<ClayDropDownWithItems
@@ -161,12 +168,23 @@ function ManagementToolbar({
 
 							{showCreationMenu && creationMenu && (
 								<ClayManagementToolbar.Item>
-									<CreationMenu {...creationMenu} />
+									<CreationMenu
+										{...creationMenu}
+										onCreateButtonClick={
+											onCreateButtonClick
+										}
+										onCreationMenuItemClick={
+											onCreationMenuItemClick
+										}
+										onShowMoreButtonClick={
+											onShowMoreButtonClick
+										}
+									/>
 								</ClayManagementToolbar.Item>
 							)}
-						</ClayManagementToolbar.ItemList>
-					</>
-				)}
+						</>
+					)}
+				</ClayManagementToolbar.ItemList>
 			</ClayManagementToolbar>
 
 			{showResultsBar && (
@@ -202,6 +220,7 @@ ManagementToolbar.propTypes = {
 	]),
 	itemsTotal: PropTypes.number,
 	onCheckboxChange: PropTypes.func,
+	onCreateButtonClick: PropTypes.func,
 	onInfoButtonClick: PropTypes.func,
 	onViewTypeSelect: PropTypes.func,
 	searchActionURL: PropTypes.string,

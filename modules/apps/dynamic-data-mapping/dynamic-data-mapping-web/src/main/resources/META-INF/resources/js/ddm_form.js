@@ -698,6 +698,39 @@ AUI.add(
 					}
 				},
 
+				convertNumberLocale(number, sourceLocale, targetLocale) {
+					if (sourceLocale !== targetLocale) {
+						var test = 1.1;
+						var sourceDecimalSeparator = test
+							.toLocaleString(sourceLocale.replace('_', '-'))
+							.charAt(1);
+						var targetDecimalSeparator = test
+							.toLocaleString(targetLocale.replace('_', '-'))
+							.charAt(1);
+
+						if (sourceDecimalSeparator !== targetDecimalSeparator) {
+							if (
+								['.', ','].includes(sourceDecimalSeparator) &&
+								['.', ','].includes(targetDecimalSeparator)
+							) {
+								number = number.replace(
+									/[,.]/g,
+									(separator) => {
+										if (targetDecimalSeparator === '.') {
+											return separator === '.' ? '' : '.';
+										}
+										else {
+											return separator === '.' ? ',' : '';
+										}
+									}
+								);
+							}
+						}
+					}
+
+					return number;
+				},
+
 				createField(fieldTemplate) {
 					var instance = this;
 
@@ -751,6 +784,27 @@ AUI.add(
 						var defaultLocale = instance.getDefaultLocale();
 
 						if (defaultLocale && localizationMap[defaultLocale]) {
+							var name = instance.get('name');
+
+							var field = instance.getFieldByNameInFieldDefinition(
+								name
+							);
+
+							if (field) {
+								var type = field.type;
+
+								if (
+									type === 'ddm-number' ||
+									type === 'ddm-decimal'
+								) {
+									return instance.convertNumberLocale(
+										localizationMap[defaultLocale],
+										defaultLocale,
+										locale
+									);
+								}
+							}
+
 							return localizationMap[defaultLocale];
 						}
 

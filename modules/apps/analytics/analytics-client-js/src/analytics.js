@@ -28,6 +28,7 @@ import {
 	STORAGE_KEY_IDENTITY,
 	STORAGE_KEY_MESSAGE_IDENTITY,
 	STORAGE_KEY_USER_ID,
+	TRACK_DEFAULT_OPTIONS,
 } from './utils/constants';
 import {getContexts, setContexts} from './utils/contexts';
 import {normalizeEvent} from './utils/events';
@@ -62,9 +63,11 @@ class Analytics {
 		}
 
 		instance.delay = config.flushInterval || FLUSH_INTERVAL;
+		instance.projectId = config.projectId;
 
 		const client = new Client({
 			delay: instance.delay,
+			projectId: instance.projectId,
 		});
 
 		const endpointUrl = (config.endpointUrl || '').replace(/\/$/, '');
@@ -148,11 +151,12 @@ class Analytics {
 	 * @example
 	 * Analytics.create(
 	 *   {
-	 *     endpointUrl: 'https://osbasahpublisher-projectid.lfr.cloud'
-	 *     flushInterval: 2000,
-	 *     userId: 'id-s7uatimmxgo',
 	 *     channelId: '123456789',
 	 *     dataSourceId: 'MyDataSourceId',
+	 *     endpointUrl: 'https://osbasahpublisher-projectid.lfr.cloud'
+	 *     flushInterval: 2000,
+	 *     projectId: '123456'
+	 *     userId: 'id-s7uatimmxgo',
 	 *   }
 	 * );
 	 */
@@ -238,28 +242,41 @@ class Analytics {
 	/**
 	 * Registers an event that is to be sent to Analytics Cloud
 	 * @param {string} eventId Id of the event
-	 * @param {string} applicationId ID of the application that triggered the event
 	 * @param {Object} eventProps Complementary information about the event
+	 * @param {Object} options Complementary information about the request
 	 */
-	send(eventId, applicationId, eventProps) {
-		if (
-			this._isTrackingDisabled() ||
-			!applicationId ||
-			instance._disposed
-		) {
+	track(eventId, eventProps, options = {}) {
+		if (this._isTrackingDisabled() || instance._disposed) {
 			return;
 		}
+
+		//eslint-disable-next-line
+		const mergedOptions = Object.assign({}, TRACK_DEFAULT_OPTIONS, options);
 
 		const currentContextHash = this._getCurrentContextHash();
 
 		instance._eventQueue.addItem(
 			normalizeEvent(
 				eventId,
-				applicationId,
+				mergedOptions.applicationId,
 				eventProps,
 				currentContextHash
 			)
 		);
+	}
+
+	/**
+	 * Registers an event that is to be sent to Analytics Cloud
+	 * @param {string} eventId Id of the event
+	 * @param {string} applicationId ID of the application that triggered the event
+	 * @param {Object} eventProps Complementary information about the event
+	 */
+	send(eventId, applicationId, eventProps) {
+		if (!applicationId) {
+			return;
+		}
+
+		this.track(eventId, eventProps, {applicationId});
 	}
 
 	/**

@@ -32,8 +32,8 @@ if (selectAccountEntryManagementToolbarDisplayContext.isSingleSelect()) {
 }
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= selectAccountEntryManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= selectAccountEntryManagementToolbarDisplayContext %>"
 />
 
 <clay:container-fluid
@@ -114,7 +114,7 @@ if (selectAccountEntryManagementToolbarDisplayContext.isSingleSelect()) {
 				'<portlet:namespace />accountEntries'
 			);
 
-			searchContainer.on('rowToggled', function (event) {
+			searchContainer.on('rowToggled', (event) => {
 				var selectedItems = event.elements.allSelectedElements;
 
 				var result = {};

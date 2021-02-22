@@ -136,6 +136,18 @@ components:
                 customFields:
                     additionalProperties: true
                     type: object
+                dateCreated:
+                    description:
+                        The account's creation date.
+                    format: date-time
+                    readOnly: true
+                    type: string
+                dateModified:
+                    description:
+                        The account's most recent modification date.
+                    format: date-time
+                    readOnly: true
+                    type: string
                 emailAddresses:
                     example:
                         - joe.1@commerce.com
@@ -234,8 +246,8 @@ components:
                 type:
                     example: 1
                     format: int32
-                    maximum: 2
-                    minimum: 0
+                    maximum: 3
+                    minimum: 1
                     type: integer
                 zip:
                     example: "91765"

@@ -29,59 +29,12 @@ import org.json.JSONObject;
  */
 public class UpstreamFailureUtil {
 
-	public static List<String> getUpstreamJobFailures(
-		String type, TopLevelBuild topLevelBuild) {
-
-		List<String> upstreamFailures = new ArrayList<>();
-
-		JSONObject upstreamJobFailuresJSONObject =
-			getUpstreamJobFailuresJSONObject(topLevelBuild);
-
-		JSONArray failedBatchesJSONArray =
-			upstreamJobFailuresJSONObject.optJSONArray("failedBatches");
-
-		if (failedBatchesJSONArray == null) {
-			return upstreamFailures;
-		}
-
-		for (int i = 0; i < failedBatchesJSONArray.length(); i++) {
-			JSONObject failedBatchJSONObject =
-				failedBatchesJSONArray.getJSONObject(i);
-
-			String jobVariant = failedBatchJSONObject.getString("jobVariant");
-
-			jobVariant = _formatJobVariant(jobVariant);
-
-			if (type.equals("build")) {
-				upstreamFailures.add(
-					_formatUpstreamBuildFailure(
-						jobVariant, failedBatchJSONObject.getString("result")));
-			}
-			else if (type.equals("test")) {
-				JSONArray failedTestsJSONArray =
-					failedBatchJSONObject.getJSONArray("failedTests");
-
-				for (int j = 0; j < failedTestsJSONArray.length(); j++) {
-					Object object = failedTestsJSONArray.get(j);
-
-					upstreamFailures.add(
-						_formatUpstreamTestFailure(
-							jobVariant, object.toString()));
-				}
-			}
-		}
-
-		return upstreamFailures;
-	}
-
 	public static int getUpstreamJobFailuresBuildNumber(
 		TopLevelBuild topLevelBuild) {
 
 		try {
 			JSONObject upstreamJobFailuresJSONObject =
 				getUpstreamJobFailuresJSONObject(topLevelBuild);
-
-			System.out.println(upstreamJobFailuresJSONObject);
 
 			return upstreamJobFailuresJSONObject.getInt("buildNumber");
 		}
@@ -98,25 +51,31 @@ public class UpstreamFailureUtil {
 	public static int getUpstreamJobFailuresBuildNumber(
 		TopLevelBuild topLevelBuild, String sha) {
 
-		int buildNumber = _getLastUpstreamBuildNumber(topLevelBuild);
+		int lastUpstreamBuildNumber = _getLastUpstreamBuildNumber(
+			topLevelBuild);
 
-		int oldestBuildNumber = Math.max(0, buildNumber - 10);
+		int buildNumber = lastUpstreamBuildNumber;
 
 		String jobURL = getUpstreamJobFailuresJobURL(topLevelBuild);
 
-		while (buildNumber > oldestBuildNumber) {
-			String upstreamBranchSHA =
-				JenkinsResultsParserUtil.getBuildParameter(
-					jobURL + "/" + buildNumber, "PORTAL_GIT_COMMIT");
+		while (buildNumber > Math.max(0, lastUpstreamBuildNumber - 10)) {
+			try {
+				String upstreamBranchSHA =
+					JenkinsResultsParserUtil.getBuildParameter(
+						jobURL + "/" + buildNumber, "PORTAL_GIT_COMMIT");
 
-			if (upstreamBranchSHA.equals(sha)) {
-				return buildNumber;
+				if (upstreamBranchSHA.equals(sha)) {
+					return buildNumber;
+				}
+			}
+			catch (RuntimeException runtimeException) {
+				System.out.println(runtimeException.getMessage());
 			}
 
 			buildNumber--;
 		}
 
-		return 0;
+		return lastUpstreamBuildNumber;
 	}
 
 	public static String getUpstreamJobFailuresJobURL(
@@ -177,12 +136,9 @@ public class UpstreamFailureUtil {
 		}
 
 		try {
-			File upstreamJobFailuresJSONFile = new File(
-				System.getenv("WORKSPACE"), "test.results.json");
-
-			if (upstreamJobFailuresJSONFile.exists()) {
+			if (_upstreamJobFailuresJSONFile.exists()) {
 				String fileContent = JenkinsResultsParserUtil.read(
-					upstreamJobFailuresJSONFile);
+					_upstreamJobFailuresJSONFile);
 
 				_upstreamFailuresJobJSONObject = new JSONObject(fileContent);
 			}
@@ -190,8 +146,12 @@ public class UpstreamFailureUtil {
 				_upstreamFailuresJobJSONObject =
 					_getUpstreamJobFailuresJSONObject(topLevelBuild);
 
+				System.out.println(
+					"Caching upstream test results in: " +
+						_upstreamJobFailuresJSONFile);
+
 				JenkinsResultsParserUtil.write(
-					upstreamJobFailuresJSONFile,
+					_upstreamJobFailuresJSONFile,
 					_upstreamFailuresJobJSONObject.toString());
 			}
 
@@ -262,7 +222,7 @@ public class UpstreamFailureUtil {
 			jobVariant = _formatJobVariant(jobVariant);
 
 			for (String failure :
-					getUpstreamJobFailures("test", topLevelBuild)) {
+					_getUpstreamJobFailures("test", topLevelBuild)) {
 
 				if (failure.equals(
 						_formatUpstreamTestFailure(
@@ -290,6 +250,14 @@ public class UpstreamFailureUtil {
 		initUpstreamJobFailuresJSONObject(topLevelBuild);
 
 		return _upstreamComparisonAvailable;
+	}
+
+	public static void resetUpstreamJobFailuresJSONObject() {
+		if (_upstreamJobFailuresJSONFile.exists()) {
+			_upstreamJobFailuresJSONFile.delete();
+		}
+
+		_upstreamFailuresJobJSONObject = null;
 	}
 
 	private static String _formatJobVariant(String jobVariant) {
@@ -342,6 +310,51 @@ public class UpstreamFailureUtil {
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
 		}
+	}
+
+	private static List<String> _getUpstreamJobFailures(
+		String type, TopLevelBuild topLevelBuild) {
+
+		List<String> upstreamFailures = new ArrayList<>();
+
+		JSONObject upstreamJobFailuresJSONObject =
+			getUpstreamJobFailuresJSONObject(topLevelBuild);
+
+		JSONArray failedBatchesJSONArray =
+			upstreamJobFailuresJSONObject.optJSONArray("failedBatches");
+
+		if (failedBatchesJSONArray == null) {
+			return upstreamFailures;
+		}
+
+		for (int i = 0; i < failedBatchesJSONArray.length(); i++) {
+			JSONObject failedBatchJSONObject =
+				failedBatchesJSONArray.getJSONObject(i);
+
+			String jobVariant = failedBatchJSONObject.getString("jobVariant");
+
+			jobVariant = _formatJobVariant(jobVariant);
+
+			if (type.equals("build")) {
+				upstreamFailures.add(
+					_formatUpstreamBuildFailure(
+						jobVariant, failedBatchJSONObject.getString("result")));
+			}
+			else if (type.equals("test")) {
+				JSONArray failedTestsJSONArray =
+					failedBatchJSONObject.getJSONArray("failedTests");
+
+				for (int j = 0; j < failedTestsJSONArray.length(); j++) {
+					Object object = failedTestsJSONArray.get(j);
+
+					upstreamFailures.add(
+						_formatUpstreamTestFailure(
+							jobVariant, object.toString()));
+				}
+			}
+		}
+
+		return upstreamFailures;
 	}
 
 	private static JSONObject _getUpstreamJobFailuresJSONObject(
@@ -407,7 +420,7 @@ public class UpstreamFailureUtil {
 		TopLevelBuild topLevelBuild = build.getTopLevelBuild();
 
 		for (String upstreamJobFailure :
-				getUpstreamJobFailures("build", topLevelBuild)) {
+				_getUpstreamJobFailures("build", topLevelBuild)) {
 
 			if (upstreamJobFailure.equals(
 					_formatUpstreamBuildFailure(jobVariant, result))) {
@@ -426,5 +439,7 @@ public class UpstreamFailureUtil {
 		new JSONObject("{\"SHA\":\"\",\"failedBatches\":[]}");
 	private static boolean _upstreamComparisonAvailable = true;
 	private static JSONObject _upstreamFailuresJobJSONObject;
+	private static final File _upstreamJobFailuresJSONFile = new File(
+		System.getenv("WORKSPACE"), "test.results.json");
 
 }

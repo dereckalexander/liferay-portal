@@ -20,6 +20,7 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.petra.string.StringUtil;
+import com.liferay.portal.kernel.util.AggregateClassLoader;
 import com.liferay.portal.util.PortalClassPathUtil;
 
 import java.io.File;
@@ -40,6 +41,8 @@ import java.util.Objects;
  * @author Igor Beslic
  */
 public class TalendProcess {
+
+	public static final String ISO_8601_PATTERN = "yyyy-MM-dd'T'HH:mm:ssZ";
 
 	public String[] getMainMethodArguments() {
 		return _mainMethodArguments.toArray(new String[0]);
@@ -92,7 +95,7 @@ public class TalendProcess {
 		public Builder lastRunStartDate(Date lastRunStartDate) {
 			if (lastRunStartDate != null) {
 				SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-					"yyyy-MM-dd'T'HH:mm:ss'Z'");
+					ISO_8601_PATTERN);
 
 				_contextParams.add(
 					"--context_param lastRunStartDate=".concat(
@@ -129,6 +132,10 @@ public class TalendProcess {
 				portalProcessConfig.getBootstrapClassPath());
 			processConfigBuilder.setProcessLogConsumer(
 				portalProcessConfig.getProcessLogConsumer());
+			processConfigBuilder.setReactClassLoader(
+				AggregateClassLoader.getAggregateClassLoader(
+					portalProcessConfig.getReactClassLoader(),
+					TalendProcess.class.getClassLoader()));
 
 			processConfigBuilder.setRuntimeClassPath(
 				StringBundler.concat(

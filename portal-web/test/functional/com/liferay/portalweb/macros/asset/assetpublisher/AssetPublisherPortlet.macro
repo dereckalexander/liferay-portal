@@ -464,18 +464,25 @@ definition {
 
 			var key_assetTitle = "${assetTitle}";
 
-			Click(
-				key_rowEntry = "${assetTitle}",
-				locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
+			if (isSet(viewNoRelatedAsset)) {
+				AssertElementNotPresent(
+					key_rowEntry = "${assetTitle}",
+					locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
+			}
+			else {
+				Click(
+					key_rowEntry = "${assetTitle}",
+					locator1 = "ContentRow#ENTRY_CONTENT_ENTRY_CHECKBOX");
 
-			SelectFrameTop();
+				SelectFrameTop();
 
-			SelectFrame(locator1 = "IFrame#CONFIGURATION");
+				SelectFrame(locator1 = "IFrame#CONFIGURATION");
 
-			Button.clickAdd();
+				Button.clickAdd();
+
+				Alert.viewSuccessMessage();
+			}
 		}
-
-		Alert.viewSuccessMessage();
 
 		SelectFrameTop();
 	}
@@ -1121,7 +1128,14 @@ definition {
 
 			SelectFrame(locator1 = "IFrame#SELECT_SITES");
 
-			Navigator.gotoNavTab(navTab = "Sites That I Administer");
+			AssertClick.assertPartialTextClickAt(
+				key_tab = "Sites That I Administer",
+				locator1 = "NavTab#TAB_LINK",
+				value1 = "Sites That I Administer");
+
+			AssertElementPresent(
+				key_tab = "Sites That I Administer",
+				locator1 = "NavTab#ACTIVE_TAB_LINK");
 
 			var key_siteName = "${liferaySiteName}";
 

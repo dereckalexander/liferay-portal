@@ -155,6 +155,8 @@ public interface AccountEntryUserRelLocalService
 
 	public void deleteAccountEntryUserRelsByAccountEntryId(long accountEntryId);
 
+	public void deleteAccountEntryUserRelsByAccountUserId(long accountUserId);
+
 	/**
 	 * @throws PortalException
 	 */
@@ -235,6 +237,10 @@ public interface AccountEntryUserRelLocalService
 	public AccountEntryUserRel fetchAccountEntryUserRel(
 		long accountEntryUserRelId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public AccountEntryUserRel fetchAccountEntryUserRel(
+		long accountEntryId, long accountUserId);
+
 	/**
 	 * Returns the account entry user rel with the primary key.
 	 *
@@ -245,6 +251,11 @@ public interface AccountEntryUserRelLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public AccountEntryUserRel getAccountEntryUserRel(
 			long accountEntryUserRelId)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public AccountEntryUserRel getAccountEntryUserRel(
+			long accountEntryId, long accountUserId)
 		throws PortalException;
 
 	/**
@@ -265,6 +276,10 @@ public interface AccountEntryUserRelLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<AccountEntryUserRel> getAccountEntryUserRelsByAccountEntryId(
 		long accountEntryId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<AccountEntryUserRel> getAccountEntryUserRelsByAccountEntryId(
+		long accountEntryId, int start, int end);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<AccountEntryUserRel> getAccountEntryUserRelsByAccountUserId(

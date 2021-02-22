@@ -224,7 +224,7 @@ public class CommerceOrderHttpHelperImpl implements CommerceOrderHttpHelper {
 			Layout currentLayout = (Layout)httpServletRequest.getAttribute(
 				WebKeys.LAYOUT);
 
-			String friendlyURL = StringPool.FORWARD_SLASH + "authentication";
+			String friendlyURL = "/authentication";
 
 			Layout layout = _layoutLocalService.fetchLayoutByFriendlyURL(
 				_portal.getScopeGroupId(httpServletRequest), false,
@@ -338,7 +338,7 @@ public class CommerceOrderHttpHelperImpl implements CommerceOrderHttpHelper {
 			_configurationProvider.getConfiguration(
 				CommerceOrderCheckoutConfiguration.class,
 				new GroupServiceSettingsLocator(
-					groupId, CommerceConstants.ORDER_SERVICE_NAME));
+					groupId, CommerceConstants.SERVICE_NAME_ORDER));
 
 		return commerceOrderCheckoutConfiguration.guestCheckoutEnabled();
 	}
@@ -409,14 +409,14 @@ public class CommerceOrderHttpHelperImpl implements CommerceOrderHttpHelper {
 		// Remove thread local order when used
 
 		CommerceOrder threadLocalCommerceOrder =
-			_commerceOrderUuidThreadLocal.get();
+			_commerceOrderThreadLocal.get();
 
 		if ((threadLocalCommerceOrder != null) &&
 			threadLocalCommerceOrder.isGuestOrder()) {
 
 			httpSession.removeAttribute(commerceOrderUuidWebKey);
 
-			_commerceOrderUuidThreadLocal.remove();
+			_commerceOrderThreadLocal.remove();
 		}
 
 		CommerceOrder userCommerceOrder =
@@ -436,10 +436,17 @@ public class CommerceOrderHttpHelperImpl implements CommerceOrderHttpHelper {
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(
 			httpServletRequest);
 
-		_commerceOrderLocalService.mergeGuestCommerceOrder(
-			commerceOrder.getCommerceOrderId(),
-			userCommerceOrder.getCommerceOrderId(),
-			_getCommerceContext(httpServletRequest), serviceContext);
+		_commerceOrderThreadLocal.set(userCommerceOrder);
+
+		try {
+			_commerceOrderLocalService.mergeGuestCommerceOrder(
+				commerceOrder.getCommerceOrderId(),
+				userCommerceOrder.getCommerceOrderId(),
+				_getCommerceContext(httpServletRequest), serviceContext);
+		}
+		finally {
+			_commerceOrderThreadLocal.remove();
+		}
 
 		httpSession.removeAttribute(commerceOrderUuidWebKey);
 
@@ -458,7 +465,7 @@ public class CommerceOrderHttpHelperImpl implements CommerceOrderHttpHelper {
 			HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		CommerceOrder commerceOrder = _commerceOrderUuidThreadLocal.get();
+		CommerceOrder commerceOrder = _commerceOrderThreadLocal.get();
 
 		if (commerceOrder != null) {
 			return commerceOrder;
@@ -511,7 +518,7 @@ public class CommerceOrderHttpHelperImpl implements CommerceOrderHttpHelper {
 				_validateCommerceOrderItemVersions(
 					commerceOrder, _portal.getLocale(httpServletRequest));
 
-				_commerceOrderUuidThreadLocal.set(commerceOrder);
+				_commerceOrderThreadLocal.set(commerceOrder);
 
 				return commerceOrder;
 			}
@@ -523,7 +530,7 @@ public class CommerceOrderHttpHelperImpl implements CommerceOrderHttpHelper {
 					commerceOrderUuid, commerceChannel.getGroupId());
 
 			if (commerceOrder != null) {
-				_commerceOrderUuidThreadLocal.set(commerceOrder);
+				_commerceOrderThreadLocal.set(commerceOrder);
 			}
 		}
 
@@ -624,8 +631,8 @@ public class CommerceOrderHttpHelperImpl implements CommerceOrderHttpHelper {
 
 	private static ModelResourcePermission<CommerceOrder>
 		_commerceOrderModelResourcePermission;
-	private static final ThreadLocal<CommerceOrder>
-		_commerceOrderUuidThreadLocal = new CentralizedThreadLocal<>(
+	private static final ThreadLocal<CommerceOrder> _commerceOrderThreadLocal =
+		new CentralizedThreadLocal<>(
 			CommerceOrderHttpHelperImpl.class.getName());
 
 	@Reference

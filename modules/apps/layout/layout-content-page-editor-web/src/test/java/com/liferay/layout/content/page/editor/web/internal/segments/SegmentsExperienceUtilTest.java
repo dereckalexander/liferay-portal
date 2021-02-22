@@ -17,7 +17,10 @@ package com.liferay.layout.content.page.editor.web.internal.segments;
 import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.language.LanguageImpl;
 import com.liferay.segments.model.SegmentsExperience;
 
 import org.junit.Assert;
@@ -36,6 +39,10 @@ public class SegmentsExperienceUtilTest {
 		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
 
 		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
+
+		LanguageUtil languageUtil = new LanguageUtil();
+
+		languageUtil.setLanguage(new LanguageImpl());
 	}
 
 	@Test
@@ -73,9 +80,17 @@ public class SegmentsExperienceUtilTest {
 			RandomTestUtil.randomLong()
 		);
 
+		Mockito.when(
+			segmentsExperience.getTypeSettingsUnicodeProperties()
+		).thenReturn(
+			new UnicodeProperties(true)
+		);
+
 		Assert.assertEquals(
 			JSONUtil.put(
 				"active", segmentsExperience.isActive()
+			).put(
+				"languageIds", new String[0]
 			).put(
 				"name", segmentsExperience.getNameCurrentValue()
 			).put(

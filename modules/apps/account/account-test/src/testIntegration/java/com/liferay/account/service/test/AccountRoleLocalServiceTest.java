@@ -18,6 +18,7 @@ import com.liferay.account.constants.AccountConstants;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.model.AccountEntryUserRel;
 import com.liferay.account.model.AccountRole;
+import com.liferay.account.model.AccountRoleTable;
 import com.liferay.account.service.AccountEntryLocalService;
 import com.liferay.account.service.AccountEntryUserRelLocalService;
 import com.liferay.account.service.AccountRoleLocalService;
@@ -25,6 +26,7 @@ import com.liferay.account.service.AccountRoleLocalServiceUtil;
 import com.liferay.account.service.test.util.AccountEntryTestUtil;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.function.UnsafeFunction;
+import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.ModelListenerException;
@@ -33,6 +35,7 @@ import com.liferay.portal.kernel.model.BaseModelListener;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.ModelListener;
 import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserGroupRole;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
@@ -101,7 +104,19 @@ public class AccountRoleLocalServiceTest {
 
 		String name = RandomTestUtil.randomString(50);
 
-		_addAccountRole(_accountEntry1.getAccountEntryId(), name);
+		AccountRole accountRole = _addAccountRole(
+			_accountEntry1.getAccountEntryId(), name);
+
+		Assert.assertEquals(
+			1L,
+			(long)_accountRoleLocalService.dslQuery(
+				DSLQueryFactoryUtil.countDistinct(
+					AccountRoleTable.INSTANCE.accountRoleId
+				).from(
+					AccountRoleTable.INSTANCE
+				).where(
+					AccountRoleTable.INSTANCE.roleId.eq(accountRole.getRoleId())
+				)));
 
 		accountRoles =
 			_accountRoleLocalService.getAccountRolesByAccountEntryIds(
@@ -109,9 +124,14 @@ public class AccountRoleLocalServiceTest {
 
 		Assert.assertEquals(accountRoles.toString(), 1, accountRoles.size());
 
-		AccountRole accountRole = accountRoles.get(0);
+		accountRole = accountRoles.get(0);
 
 		Assert.assertEquals(name, accountRole.getRoleName());
+
+		Role role = accountRole.getRole();
+
+		Assert.assertEquals(AccountRole.class.getName(), role.getClassName());
+		Assert.assertEquals(accountRole.getAccountRoleId(), role.getClassPK());
 	}
 
 	@Test

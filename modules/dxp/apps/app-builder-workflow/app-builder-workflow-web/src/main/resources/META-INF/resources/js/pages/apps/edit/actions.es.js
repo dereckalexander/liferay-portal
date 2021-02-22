@@ -9,10 +9,14 @@
  * distribution rights of the Software.
  */
 
-import {getItem} from 'app-builder-web/js/utils/client.es';
-import {getLocalizedValue} from 'app-builder-web/js/utils/lang.es';
+import {getItem} from 'data-engine-js-components-web/js/utils/client.es';
+import {getLocalizedValue} from 'data-engine-js-components-web/js/utils/lang.es';
 
-import {getFormViewFields, validateSelectedFormViews} from './utils.es';
+import {
+	checkRequiredFields,
+	getFormViewFields,
+	validateSelectedFormViews,
+} from './utils.es';
 
 const PARAMS = {keywords: '', page: -1, pageSize: -1, sort: ''};
 
@@ -92,19 +96,24 @@ export function populateConfigData([
 		};
 	});
 
+	const dataObject = dataObjects.find(({id}) => id === app.dataDefinitionId);
+
+	const checkedFormViews = checkRequiredFields(formViews, dataObject);
+
 	const {appWorkflowStates = [], appWorkflowTasks = []} = appWorkflow;
+
 	const initialState = appWorkflowStates.find(({initial}) => initial);
 	const finalState = appWorkflowStates.find(({initial}) => !initial);
 
 	const config = {
 		currentStep: initialState,
-		dataObject: dataObjects.find(({id}) => id === app.dataDefinitionId),
-		formView: formViews.find(({id}) => id === app.dataLayoutId),
+		dataObject,
+		formView: checkedFormViews.find(({id}) => id === app.dataLayoutId),
 		listItems: {
 			assigneeRoles,
 			dataObjects,
 			fetching: false,
-			formViews,
+			formViews: checkedFormViews,
 			tableViews,
 		},
 		steps: [initialState, ...appWorkflowTasks, finalState],

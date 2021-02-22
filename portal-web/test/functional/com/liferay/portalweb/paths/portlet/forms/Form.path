@@ -34,6 +34,11 @@
     <td></td>
 </tr>
 <tr>
+    <td>SETTINGS_FORM_BUTTON</td>
+    <td>//button[contains(@id,'ddmFormInstanceSettingsIcon')]</td>
+    <td></td>
+</tr>
+<tr>
     <td>NAME_FIELD</td>
     <td>//div[contains(@class,'ddm-form-basic-info')]//textarea[contains(@id, 'nameEditor')]</td>
     <td></td>
@@ -226,7 +231,12 @@
 <!--SETTINGS_TAB-->
 <tr>
     <td>SETTINGS_TAB_EMAIL_NOTIFICATIONS</td>
-    <td>//a[contains(@class,'tab-content') and contains(.,'Email Notifications')] | //span[contains(text(),'Email Notifications')]</td>
+    <td>//a[contains(@class,'tab-content') and contains(.,'Notifications')] | //span[contains(text(),'Notifications')]</td>
+    <td></td>
+</tr>
+<tr>
+    <td>SETTINGS_TAB_PERSONALIZATION</td>
+    <td>//a[contains(@class,'tab-content') and contains(.,'Personalization')] | //span[contains(text(),'Personalization')]</td>
     <td></td>
 </tr>
 <tr>
@@ -420,7 +430,7 @@
 <!--DATA_PROVIDER_PERMISSIONS_PARAMETER-->
 <tr>
     <td>DATA_PROVIDER_PERMISSIONS_PARAMETER_PANEL</td>
-    <td>//div[contains(@id,'permissionsTitle')]//a[contains(@class,'collapse-icon')]</td>
+    <td>//div[contains(@id,'dataProviderPermissions')]//a[contains(@class,'collapse-icon')]</td>
     <td></td>
 </tr>
 <tr>

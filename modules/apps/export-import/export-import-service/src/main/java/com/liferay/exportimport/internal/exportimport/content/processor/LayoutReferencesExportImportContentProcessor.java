@@ -773,6 +773,7 @@ public class LayoutReferencesExportImportContentProcessor
 
 		Group group = _groupLocalService.getGroup(groupId);
 
+		String[] friendlyURLSeparators = {"/-/", "/b/", "/d/", "/w/"};
 		String[] patterns = {"href=", "[[", "{{"};
 
 		int beginPos = -1;
@@ -832,7 +833,7 @@ public class LayoutReferencesExportImportContentProcessor
 				continue;
 			}
 
-			endPos = url.indexOf(Portal.FRIENDLY_URL_SEPARATOR);
+			endPos = StringUtil.indexOfAny(url, friendlyURLSeparators);
 
 			if (endPos != -1) {
 				url = url.substring(0, endPos);
@@ -1012,9 +1013,10 @@ public class LayoutReferencesExportImportContentProcessor
 		throws PortalException {
 
 		try {
-			URI uri = new URI(url);
+			URI uri = _http.getURI(url);
 
-			if (InetAddressUtil.isLocalInetAddress(
+			if ((uri != null) &&
+				InetAddressUtil.isLocalInetAddress(
 					InetAddress.getByName(uri.getHost()))) {
 
 				StringBundler sb = new StringBundler(5);

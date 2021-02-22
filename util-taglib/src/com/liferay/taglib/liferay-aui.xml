@@ -505,6 +505,12 @@
 				<inputType>java.lang.String</inputType>
 				<outputType>java.lang.String</outputType>
 			</attribute>
+			<attribute>
+				<description>A CSS class for styling the panel-header-link.</description>
+				<name>panelHeaderLinkCssClass</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
 		</attributes>
 	</component>
 	<component bodyContent="true" name="FieldsetGroup">
@@ -1346,6 +1352,11 @@
 	<component dynamicAttributes="false" name="Script" parentClass="com.liferay.taglib.util.PositionTagSupport" writeJSP="false">
 		<description>Creates a script component in which to write JavaScript that facilitates using AlloyUI modules.</description>
 		<attributes>
+			<attribute>
+				<name>load</name>
+				<inputType>java.lang.String</inputType>
+				<outputType>java.lang.String</outputType>
+			</attribute>
 			<attribute>
 				<description>A position for the script.</description>
 				<name>position</name>

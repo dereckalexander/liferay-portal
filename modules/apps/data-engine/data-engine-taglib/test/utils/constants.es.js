@@ -485,6 +485,7 @@ export const dataLayoutBuilderConfig = {
 			'visibilityExpression',
 		],
 	},
+	contentTypeConfig: {allowInvalidAvailableLocalesForProperty: false},
 	context: {},
 	dataLayoutBuilderId:
 		'_com_liferay_journal_web_portlet_JournalPortlet_dataLayoutBuilder',
@@ -568,7 +569,7 @@ export const FORM_VIEW = {
 			getDDMForm: () => ({pages}),
 			getDDMFormFieldSettingsContext: jest.fn(),
 			getDefaultDataLayout: () => ({dataLayoutPages: pages}),
-			getFieldSetDDMForm: () => ({pages}),
+			getFieldSetDDMForm: ({fieldSet: {name}}) => ({name, pages}),
 			getFieldTypes: () => {
 				return [
 					{

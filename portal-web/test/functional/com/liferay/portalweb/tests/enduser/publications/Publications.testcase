@@ -374,6 +374,11 @@ definition {
 
 	@priority = "5"
 	test PublishParallelPublications {
+		property app.server.types = "jboss,tcserver,tomcat,weblogic,websphere,wildfly";
+		property database.types = "db2,hypersonic,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
+		property environment.acceptance = "true";
+		property portal.acceptance = "true";
+
 		Navigator.openURL();
 
 		ProductMenu.gotoPortlet(
@@ -506,10 +511,6 @@ definition {
 
 		Publications.publishPublication(publicationsName = "Publication Name");
 
-		Publications.viewPublishedPublicationDetails(
-			publicationPublishedBy = "Test Test",
-			publicationsName = "Publication Name");
-
 		AssertTextPresent(
 			key_publicationsName = "Production",
 			locator1 = "Publications#PUBLICATIONS_INDICATOR_TITLE",
@@ -569,7 +570,7 @@ definition {
 
 		Publications.schedulePublication(publicationsName = "Publication Name 1");
 
-		Pause(locator1 = "120000");
+		Pause(locator1 = "240000");
 
 		Publications.assertScheduledPublicationPublished(publicationsName = "Publication Name 1");
 
@@ -593,7 +594,7 @@ definition {
 			gotoManagePublications = "true",
 			publicationsName = "Publication Name 2");
 
-		Pause(locator1 = "120000");
+		Pause(locator1 = "240000");
 
 		Publications.assertScheduledPublicationPublished(publicationsName = "Publication Name 2");
 
@@ -617,7 +618,7 @@ definition {
 			gotoReviewPublications = "true",
 			publicationsName = "Publication Name 3");
 
-		Pause(locator1 = "120000");
+		Pause(locator1 = "240000");
 
 		Publications.assertScheduledPublicationPublished(publicationsName = "Publication Name 3");
 	}

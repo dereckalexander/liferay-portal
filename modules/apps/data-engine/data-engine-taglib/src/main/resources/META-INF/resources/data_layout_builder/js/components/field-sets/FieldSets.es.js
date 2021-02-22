@@ -88,10 +88,10 @@ export default function FieldSets({keywords}) {
 		if (fieldSet) {
 			const {context} = appProps;
 			const {defaultDataLayout, id: dataDefinitionId} = fieldSet;
-			const ddmForm = dataLayoutBuilder.getFieldSetDDMForm(
+			const ddmForm = dataLayoutBuilder.getFieldSetDDMForm({
+				availableLanguageIds: dataDefinition.availableLanguageIds,
 				fieldSet,
-				dataDefinition
-			);
+			});
 
 			const [{rows}] = ddmForm.pages;
 
@@ -133,24 +133,20 @@ export default function FieldSets({keywords}) {
 	const deleteFieldSet = useDeleteFieldSet({dataLayoutBuilder});
 	const propagateFieldSet = usePropagateFieldSet();
 
-	const onDoubleClick = ({fieldSet: {name: fieldName}, fieldSet}) => {
+	const onDoubleClick = ({fieldSet}) => {
 		const {activePage, pages} = dataLayoutBuilder.getStore();
-
-		dataLayoutBuilder.dispatch(
-			'fieldSetAdded',
-			dropFieldSet({
-				availableLanguageIds: dataDefinition.availableLanguageIds,
-				dataLayoutBuilder,
-				defaultLanguageId: dataDefinition.defaultLanguageId,
-				fieldName,
-				fieldSet,
-				indexes: {
-					columnIndex: 0,
-					pageIndex: activePage,
-					rowIndex: pages[activePage].rows.length,
-				},
-			})
-		);
+		const payload = dropFieldSet({
+			availableLanguageIds: dataDefinition.availableLanguageIds,
+			dataLayoutBuilder,
+			defaultLanguageId: dataDefinition.defaultLanguageId,
+			fieldSet,
+			indexes: {
+				columnIndex: 0,
+				pageIndex: activePage,
+				rowIndex: pages[activePage].rows.length,
+			},
+		});
+		dataLayoutBuilder.dispatch('fieldSetAdded', payload);
 	};
 
 	const onClickCreateNewFieldset = () => toggleFieldSet(null, dataDefinition);

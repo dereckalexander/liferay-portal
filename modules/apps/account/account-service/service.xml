@@ -47,6 +47,10 @@
 			<finder-column name="companyId" />
 			<finder-column name="status" />
 		</finder>
+		<finder name="U_T" return-type="Collection">
+			<finder-column name="userId" />
+			<finder-column name="type" />
+		</finder>
 
 		<!-- References -->
 
@@ -55,6 +59,7 @@
 		<reference entity="Resource" package-path="com.liferay.portal" />
 		<reference entity="User" package-path="com.liferay.portal" />
 		<reference entity="AssetEntry" package-path="com.liferay.portlet.asset" />
+		<reference entity="ExpandoRow" package-path="com.liferay.portlet.expando" />
 	</entity>
 	<entity local-service="true" name="AccountEntryOrganizationRel">
 
@@ -154,14 +159,14 @@
 
 		<!-- References -->
 
-		<reference entity="AccountGroupAccountEntryRel" package-path="com.liferay.account" />
+		<reference entity="AccountGroupRel" package-path="com.liferay.account" />
 		<reference entity="User" package-path="com.liferay.portal" />
 	</entity>
-	<entity local-service="true" name="AccountGroupAccountEntryRel">
+	<entity local-service="true" name="AccountGroupRel">
 
 		<!-- PK fields -->
 
-		<column name="AccountGroupAccountEntryRelId" primary="true" type="long" />
+		<column name="accountGroupRelId" primary="true" type="long" />
 
 		<!-- Audit fields -->
 
@@ -170,19 +175,22 @@
 		<!-- Other fields -->
 
 		<column name="accountGroupId" type="long" />
-		<column name="accountEntryId" type="long" />
+		<column name="classNameId" type="long" />
+		<column name="classPK" type="long" />
 
 		<!-- Finder methods -->
 
 		<finder name="AccountGroupId" return-type="Collection">
 			<finder-column name="accountGroupId" />
 		</finder>
-		<finder name="AccountEntryId" return-type="Collection">
-			<finder-column name="accountEntryId" />
+		<finder name="C_C" return-type="Collection">
+			<finder-column name="classNameId" />
+			<finder-column name="classPK" />
 		</finder>
-		<finder name="AGI_AEI" return-type="AccountGroupAccountEntryRel">
+		<finder name="A_C_C" return-type="AccountGroupRel">
 			<finder-column name="accountGroupId" />
-			<finder-column name="accountEntryId" />
+			<finder-column name="classNameId" />
+			<finder-column name="classPK" />
 		</finder>
 	</entity>
 	<entity local-service="true" name="AccountRole">
@@ -215,8 +223,8 @@
 		<!-- References -->
 
 		<reference entity="AccountEntry" package-path="com.liferay.account" />
+		<reference entity="Company" package-path="com.liferay.portal" />
 		<reference entity="Role" package-path="com.liferay.portal" />
-		<reference entity="User" package-path="com.liferay.portal" />
 		<reference entity="UserGroupRole" package-path="com.liferay.portal" />
 	</entity>
 	<exceptions>
@@ -229,6 +237,6 @@
 		<exception>DuplicateAccountEntryId</exception>
 		<exception>DuplicateAccountEntryOrganizationRel</exception>
 		<exception>DuplicateAccountEntryUserRel</exception>
-		<exception>DuplicateAccountGroupAccountEntryRel</exception>
+		<exception>DuplicateAccountGroupRel</exception>
 	</exceptions>
 </service-builder>

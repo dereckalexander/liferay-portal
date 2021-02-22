@@ -17,7 +17,10 @@ import React, {useCallback, useContext, useEffect} from 'react';
 import {updateFragmentEntryLinkContent} from '../actions/index';
 import FragmentService from '../services/FragmentService';
 import InfoItemService from '../services/InfoItemService';
+import LayoutService from '../services/LayoutService';
 import {useDispatch} from '../store/index';
+import isMappedToInfoItem from '../utils/editable-value/isMappedToInfoItem';
+import isMappedToLayout from '../utils/editable-value/isMappedToLayout';
 
 const defaultFromControlsId = (itemId) => itemId;
 const defaultToControlsId = (controlId) => controlId;
@@ -119,21 +122,30 @@ const useGetContent = (fragmentEntryLink, languageId, segmentsExperienceId) => {
 const useGetFieldValue = () => {
 	const {collectionItem} = useContext(CollectionItemContext);
 
-	const getFromServer = useCallback(
-		({classNameId, classPK, fieldId, languageId}) =>
-			InfoItemService.getInfoItemFieldValue({
-				classNameId,
-				classPK,
-				fieldId,
-				languageId,
+	const getFromServer = useCallback((editable) => {
+		if (isMappedToInfoItem(editable)) {
+			return InfoItemService.getInfoItemFieldValue({
+				...editable,
 				onNetworkStatus: () => {},
 			}).then((response) => {
+				if (!response || !Object.keys(response).length) {
+					throw new Error('Field value does not exist');
+				}
+
 				const {fieldValue = ''} = response;
 
 				return fieldValue;
-			}),
-		[]
-	);
+			});
+		}
+
+		if (isMappedToLayout(editable)) {
+			return LayoutService.getLayoutFriendlyURL(editable.layout).then(
+				(response) => response.friendlyURL || ''
+			);
+		}
+
+		return Promise.resolve(editable?.defaultValue || editable);
+	}, []);
 
 	const getFromCollectionItem = useCallback(
 		({collectionFieldId}) =>

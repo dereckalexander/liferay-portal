@@ -24,6 +24,7 @@ export {
 export {PagesVisitor, RulesVisitor} from './js/util/visitors.es';
 export * as FormSupport from './js/util/FormSupport.es';
 export {getConnectedReactComponentAdapter} from './js/util/ReactComponentAdapter.es';
+export {default as setDataRecord} from './js/util/setDataRecord.es';
 
 // Composing Form
 
@@ -39,5 +40,5 @@ export * as DefaultVariant from './js/components/PageRenderer/DefaultVariant.es'
 
 // Containers
 
-export {default as Form} from './js/containers/Form.es';
+export {default as Form, ReactFormAdapter} from './js/containers/Form.es';
 export {FormNoop} from './js/containers/FormNoop.es';

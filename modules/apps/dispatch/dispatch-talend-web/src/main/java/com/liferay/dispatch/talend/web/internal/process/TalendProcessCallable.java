@@ -14,20 +14,26 @@
 
 package com.liferay.dispatch.talend.web.internal.process;
 
+import com.liferay.petra.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.petra.process.ProcessCallable;
 import com.liferay.petra.process.ProcessException;
 
-import java.io.Serializable;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import java.security.Permission;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @author Igor Beslic
  */
-public class TalendProcessCallable implements ProcessCallable<Serializable> {
+public class TalendProcessCallable
+	implements ProcessCallable<TalendProcessOutput> {
 
 	public TalendProcessCallable(
 		String[] mainMethodArgs, String jobMainClassFQN) {
@@ -37,7 +43,24 @@ public class TalendProcessCallable implements ProcessCallable<Serializable> {
 	}
 
 	@Override
-	public Serializable call() throws ProcessException {
+	public TalendProcessOutput call() throws ProcessException {
+		PrintStream errPrintStream = System.err;
+
+		UnsyncByteArrayOutputStream errUnsyncByteArrayOutputStream =
+			new UnsyncByteArrayOutputStream();
+
+		System.setErr(
+			new TeePrintStream(errUnsyncByteArrayOutputStream, errPrintStream));
+
+		UnsyncByteArrayOutputStream outUnsyncByteArrayOutputStream =
+			new UnsyncByteArrayOutputStream();
+
+		PrintStream outPrintStream = System.out;
+
+		System.setOut(
+			new TeePrintStream(outUnsyncByteArrayOutputStream, outPrintStream));
+
+		AtomicInteger exitStatusAtomicInteger = new AtomicInteger();
 		RuntimeException runtimeException = new RuntimeException();
 
 		System.setSecurityManager(
@@ -45,6 +68,8 @@ public class TalendProcessCallable implements ProcessCallable<Serializable> {
 
 				@Override
 				public void checkExit(int status) {
+					exitStatusAtomicInteger.set(status);
+
 					throw runtimeException;
 				}
 
@@ -70,7 +95,10 @@ public class TalendProcessCallable implements ProcessCallable<Serializable> {
 			Throwable causeThrowable = invocationTargetException.getCause();
 
 			if (causeThrowable == runtimeException) {
-				return null;
+				return new TalendProcessOutput(
+					exitStatusAtomicInteger.get(),
+					outUnsyncByteArrayOutputStream.toString(),
+					errUnsyncByteArrayOutputStream.toString());
 			}
 
 			throw new ProcessException(causeThrowable);
@@ -78,13 +106,66 @@ public class TalendProcessCallable implements ProcessCallable<Serializable> {
 		catch (Throwable throwable) {
 			throw new ProcessException(throwable);
 		}
+		finally {
+			System.setErr(errPrintStream);
+			System.setOut(outPrintStream);
+		}
 
-		return null;
+		throw new ProcessException("Talend process did not trigger JVM exit");
 	}
 
 	private static final long serialVersionUID = 1L;
 
 	private final String _jobMainClassFQN;
 	private final String[] _mainMethodArgs;
+
+	private class TeePrintStream extends PrintStream {
+
+		@Override
+		public void close() {
+			super.close();
+
+			_printStream.flush();
+		}
+
+		@Override
+		public void flush() {
+			super.flush();
+
+			_printStream.flush();
+		}
+
+		@Override
+		public void write(byte[] bytes) throws IOException {
+			super.write(bytes);
+
+			_printStream.write(bytes);
+		}
+
+		@Override
+		public void write(byte[] bytes, int offset, int length) {
+			super.write(bytes, offset, length);
+
+			_printStream.write(bytes, offset, length);
+		}
+
+		@Override
+		public void write(int integer) {
+			super.write(integer);
+
+			_printStream.write(integer);
+		}
+
+		private TeePrintStream(
+			OutputStream outputStream, PrintStream printStream) {
+
+			super(outputStream);
+
+			_printStream = printStream;
+		}
+
+		private final PrintStream _printStream;
+
+	}
 
 }

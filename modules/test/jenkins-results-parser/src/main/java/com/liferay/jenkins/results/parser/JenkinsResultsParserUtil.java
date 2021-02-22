@@ -17,8 +17,6 @@ package com.liferay.jenkins.results.parser;
 import com.google.common.collect.Lists;
 import com.google.common.io.CountingInputStream;
 
-import com.liferay.jenkins.results.parser.spira.SpiraRelease;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,12 +51,14 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
@@ -85,6 +85,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -105,6 +108,10 @@ public class JenkinsResultsParserUtil {
 		"liferay-jenkins-ee", "liferay-jenkins-results-parser-samples-ee",
 		"liferay-portal"
 	};
+
+	public static final int PAGES_GITHUB_API_PAGES_SIZE_MAX = 10;
+
+	public static final int PER_PAGE_GITHUB_API_PAGES_SIZE_MAX = 100;
 
 	public static final String URL_CACHE = initCacheURL();
 
@@ -782,19 +789,7 @@ public class JenkinsResultsParserUtil {
 		return new File(buildProperties.getProperty("base.repository.dir"));
 	}
 
-	public static String getBuildID(
-		String topLevelBuildURL, String testSuiteName) {
-
-		Properties buildProperties = null;
-
-		try {
-			buildProperties = getBuildProperties();
-		}
-		catch (IOException ioException) {
-			throw new RuntimeException(
-				"Unable to get build.properties", ioException);
-		}
-
+	public static String getBuildID(String topLevelBuildURL) {
 		Matcher matcher = _topLevelBuildURLPattern.matcher(topLevelBuildURL);
 
 		matcher.find();
@@ -807,10 +802,19 @@ public class JenkinsResultsParserUtil {
 
 		sb.append(String.format("%02d", Integer.parseInt(masterNumber)));
 
+		Properties buildProperties = null;
+
+		try {
+			buildProperties = getBuildProperties();
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(
+				"Unable to get build.properties", ioException);
+		}
+
 		sb.append(
 			buildProperties.getProperty(
-				"spira.release.id[" + matcher.group("jobName") + "][" +
-					testSuiteName + "]"));
+				"job.id[" + matcher.group("jobName") + "]"));
 
 		sb.append("_");
 		sb.append(matcher.group("buildNumber"));
@@ -956,10 +960,33 @@ public class JenkinsResultsParserUtil {
 		sb.append(Integer.parseInt(matcher.group("masterNumber")));
 		sb.append(".liferay.com/job/");
 
-		sb.append(
-			SpiraRelease.getJobNameByID(
-				Integer.parseInt(matcher.group("spiraReleaseID"))));
+		String jobName = null;
 
+		Properties buildProperties = null;
+
+		try {
+			buildProperties = getBuildProperties();
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(
+				"Unable to get build.properties", ioException);
+		}
+
+		for (String propertyName : buildProperties.stringPropertyNames()) {
+			if (propertyName.startsWith("job.id[")) {
+				String propertyValue = buildProperties.getProperty(
+					propertyName);
+
+				if (propertyValue.equals(matcher.group("jobID"))) {
+					jobName = propertyName.substring(
+						7, propertyName.length() - 1);
+
+					break;
+				}
+			}
+		}
+
+		sb.append(jobName);
 		sb.append("/");
 		sb.append(matcher.group("buildNumber"));
 
@@ -992,7 +1019,8 @@ public class JenkinsResultsParserUtil {
 		}
 
 		try {
-			return Files.newBufferedReader(Paths.get(cachedTextFile.toURI()));
+			return Files.newBufferedReader(
+				Paths.get(cachedTextFile.toURI()), StandardCharsets.UTF_8);
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(
@@ -1038,6 +1066,34 @@ public class JenkinsResultsParserUtil {
 		}
 
 		return _getCanonicalPath(canonicalFile);
+	}
+
+	public static String getCIProperty(
+		String branchName, String key, String repositoryName) {
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("https://raw.githubusercontent.com/liferay/");
+		sb.append(repositoryName);
+		sb.append("/");
+		sb.append(branchName);
+		sb.append("/ci.properties");
+
+		Properties ciProperties = new Properties();
+
+		try {
+			String ciPropertiesString = toString(sb.toString(), true);
+
+			ciProperties.load(new StringReader(ciPropertiesString));
+		}
+		catch (IOException ioException) {
+			System.out.println(
+				"Unable to load ci.properties from " + sb.toString());
+
+			return null;
+		}
+
+		return ciProperties.getProperty(key);
 	}
 
 	public static String getCohortName() {
@@ -1231,6 +1287,10 @@ public class JenkinsResultsParserUtil {
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
 		}
+	}
+
+	public static DateFormat getGitHubDateFormat() {
+		return _gitHubDateFormat;
 	}
 
 	public static String[] getGlobsFromProperty(String globProperty) {
@@ -1845,13 +1905,14 @@ public class JenkinsResultsParserUtil {
 		Map<String, Set<String>> propertyOptRegexSets =
 			_getPropertyOptRegexSets(matchingProperties.stringPropertyNames());
 
-		for (Map.Entry<String, Set<String>> entry :
-				propertyOptRegexSets.entrySet()) {
+		for (Set<String> targetOptSet : targetOptSets) {
+			for (Map.Entry<String, Set<String>> propertyOptRegexEntry :
+					propertyOptRegexSets.entrySet()) {
 
-			Set<String> propertyOptRegexSet = entry.getValue();
+				Set<String> propertyOptRegexes =
+					propertyOptRegexEntry.getValue();
 
-			for (Set<String> targetOptSet : targetOptSets) {
-				if (propertyOptRegexSet.size() > targetOptSet.size()) {
+				if (targetOptSet.size() < propertyOptRegexes.size()) {
 					continue;
 				}
 
@@ -1860,25 +1921,21 @@ public class JenkinsResultsParserUtil {
 				for (String targetOpt : targetOptSet) {
 					boolean matchesPropertyOptRegex = false;
 
-					for (String propertyOptRegex : propertyOptRegexSet) {
-						if (!targetOpt.matches(propertyOptRegex)) {
-							continue;
+					for (String propertyOptRegex : propertyOptRegexes) {
+						if (targetOpt.matches(propertyOptRegex)) {
+							matchesPropertyOptRegex = true;
 						}
-
-						matchesPropertyOptRegex = true;
-
-						break;
 					}
 
 					if (!matchesPropertyOptRegex) {
 						matchesAllPropertyOptRegexes = false;
+
+						break;
 					}
 				}
 
 				if (matchesAllPropertyOptRegexes) {
-					propertyName = entry.getKey();
-
-					break;
+					propertyName = propertyOptRegexEntry.getKey();
 				}
 			}
 
@@ -2062,6 +2119,30 @@ public class JenkinsResultsParserUtil {
 		}
 
 		return sb.toString();
+	}
+
+	public static Long getRemoteCurrentTimeSeconds(String hostname) {
+		if (isNullOrEmpty(hostname)) {
+			return null;
+		}
+
+		String command = combine("ssh ", hostname, " date +%s");
+
+		try {
+			Process process = executeBashCommands(
+				false, new File("."), 3000, command);
+
+			if (process.exitValue() != 0) {
+				return null;
+			}
+
+			String output = readInputStream(process.getInputStream());
+
+			return Long.parseLong(output.replaceAll("(?s)(\\d+).*", "$1"));
+		}
+		catch (IOException | TimeoutException exception) {
+			return null;
+		}
 	}
 
 	public static String getRemoteURL(String localURL) {
@@ -2727,7 +2808,9 @@ public class JenkinsResultsParserUtil {
 				}
 
 				if ((httpAuthorizationHeader == null) &&
-					url.startsWith("https://api.github.com")) {
+					(url.startsWith("https://api.github.com") ||
+					 url.startsWith(
+						 "https://raw.githubusercontent.com/liferay/"))) {
 
 					Properties buildProperties = getBuildProperties();
 
@@ -2753,6 +2836,25 @@ public class JenkinsResultsParserUtil {
 					httpAuthorizationHeader = new BasicHTTPAuthorization(
 						buildProperties.getProperty("jenkins.admin.user.token"),
 						buildProperties.getProperty("jenkins.admin.user.name"));
+				}
+
+				boolean testrayRequest = false;
+
+				if (url.matches("https://testray.liferay.com/?.+") ||
+					url.matches(
+						"https://webserver-testray-dev.lfr.cloud/?.+")) {
+
+					testrayRequest = true;
+				}
+
+				if ((httpAuthorizationHeader == null) && testrayRequest) {
+					Properties buildProperties = getBuildProperties();
+
+					httpAuthorizationHeader = new BasicHTTPAuthorization(
+						getProperty(
+							buildProperties, "testray.admin.user.password"),
+						getProperty(
+							buildProperties, "testray.admin.user.name"));
 				}
 
 				URL urlObject = new URL(url);
@@ -2807,8 +2909,11 @@ public class JenkinsResultsParserUtil {
 						httpURLConnection.setRequestProperty(
 							"Authorization",
 							httpAuthorizationHeader.toString());
-						httpURLConnection.setRequestProperty(
-							"Content-Type", "application/json");
+
+						if (!testrayRequest) {
+							httpURLConnection.setRequestProperty(
+								"Content-Type", "application/json");
+						}
 					}
 
 					if (postContent != null) {
@@ -3343,6 +3448,39 @@ public class JenkinsResultsParserUtil {
 			httpAuthorization, false);
 	}
 
+	public static void unzip(File zipFile, File destDir) {
+		try (FileInputStream fileInputStream = new FileInputStream(zipFile);
+			ZipInputStream zipInputStream = new ZipInputStream(
+				fileInputStream)) {
+
+			ZipEntry zipEntry = zipInputStream.getNextEntry();
+
+			while (zipEntry != null) {
+				String zipEntryName = zipEntry.getName();
+
+				File destFile = new File(destDir, zipEntryName);
+
+				if (zipEntryName.endsWith(File.separator)) {
+					Files.createDirectories(destFile.toPath());
+				}
+				else {
+					destFile.mkdirs();
+
+					Files.copy(
+						zipInputStream, destFile.toPath(),
+						StandardCopyOption.REPLACE_EXISTING);
+				}
+
+				zipEntry = zipInputStream.getNextEntry();
+			}
+
+			zipInputStream.closeEntry();
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
+	}
+
 	public static void updateBuildDescription(
 		String buildDescription, int buildNumber, String jobName,
 		String masterHostname) {
@@ -3432,6 +3570,54 @@ public class JenkinsResultsParserUtil {
 					"Unable to read properties file " + propertiesFile,
 					ioException);
 			}
+		}
+	}
+
+	public static void zip(final File sourceDir, File zipFile) {
+		try (FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
+			final ZipOutputStream zipOutputStream = new ZipOutputStream(
+				fileOutputStream)) {
+
+			Files.walkFileTree(
+				sourceDir.toPath(),
+				new SimpleFileVisitor<Path>() {
+
+					@Override
+					public FileVisitResult visitFile(
+						Path path, BasicFileAttributes attributes) {
+
+						if (attributes.isSymbolicLink()) {
+							return FileVisitResult.CONTINUE;
+						}
+
+						try (FileInputStream fileInputStream =
+								new FileInputStream(path.toFile())) {
+
+							zipOutputStream.putNextEntry(
+								new ZipEntry(
+									getPathRelativeTo(
+										path.toFile(), sourceDir)));
+
+							byte[] bytes = new byte[1024];
+							int len;
+
+							while ((len = fileInputStream.read(bytes)) > 0) {
+								zipOutputStream.write(bytes, 0, len);
+							}
+
+							zipOutputStream.closeEntry();
+						}
+						catch (IOException ioException) {
+							throw new RuntimeException(ioException);
+						}
+
+						return FileVisitResult.CONTINUE;
+					}
+
+				});
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
 		}
 	}
 
@@ -4102,12 +4288,14 @@ public class JenkinsResultsParserUtil {
 
 	private static final Pattern _buildIDPattern = Pattern.compile(
 		"(?<cohortNumber>[\\d]{1})(?<masterNumber>[\\d]{2})" +
-			"(?<spiraReleaseID>[\\d]+)_(?<buildNumber>[\\d]+)");
+			"(?<jobID>[\\d]+)_(?<buildNumber>[\\d]+)");
 	private static final Hashtable<Object, Object> _buildProperties =
 		new Hashtable<>();
 	private static String[] _buildPropertiesURLs;
 	private static final Pattern _curlyBraceExpansionPattern = Pattern.compile(
 		"\\{.*?\\}");
+	private static final DateFormat _gitHubDateFormat = new SimpleDateFormat(
+		"yyyy-MM-dd'T'HH:mm:ss");
 	private static final Pattern _javaVersionPattern = Pattern.compile(
 		"(\\d+\\.\\d+)");
 	private static final Pattern _jenkinsMasterPattern = Pattern.compile(

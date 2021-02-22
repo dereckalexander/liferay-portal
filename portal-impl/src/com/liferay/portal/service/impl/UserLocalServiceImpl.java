@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.dao.orm.WildcardMode;
 import com.liferay.portal.kernel.exception.CompanyMaxUsersException;
 import com.liferay.portal.kernel.exception.ContactBirthdayException;
 import com.liferay.portal.kernel.exception.ContactNameException;
+import com.liferay.portal.kernel.exception.DataLimitException;
 import com.liferay.portal.kernel.exception.DuplicateGoogleUserIdException;
 import com.liferay.portal.kernel.exception.DuplicateOpenIdException;
 import com.liferay.portal.kernel.exception.ModelListenerException;
@@ -1009,7 +1010,7 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 			(userPersistence.countByCompanyId(companyId) >=
 				PropsValues.DATA_LIMIT_MAX_USER_COUNT)) {
 
-			throw new PortalException(
+			throw new DataLimitException(
 				"Unable to exceed maximum number of allowed users");
 		}
 
@@ -2180,6 +2181,28 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		catch (EncryptorException encryptorException) {
 			throw new SystemException(encryptorException);
 		}
+	}
+
+	/**
+	 * Returns the default user for the company.
+	 *
+	 * @param  companyId the primary key of the company
+	 * @return the default user for the company, or <code>null</code> if a user
+	 * 			with the company key could not be found
+	 */
+	@Override
+	public User fetchDefaultUser(long companyId) {
+		User user = _defaultUsers.get(companyId);
+
+		if (user == null) {
+			user = userPersistence.fetchByC_DU(companyId, true);
+
+			if (user != null) {
+				_defaultUsers.put(companyId, user);
+			}
+		}
+
+		return user;
 	}
 
 	/**

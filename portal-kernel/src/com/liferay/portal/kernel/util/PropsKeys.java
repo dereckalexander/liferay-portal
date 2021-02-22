@@ -661,6 +661,12 @@ public interface PropsKeys {
 	public static final String DATA_LIMIT_MAX_DL_STORAGE_SIZE =
 		"data.limit.max.dl.storage.size";
 
+	public static final String DATA_LIMIT_MAX_JOURNAL_ARTICLE_COUNT =
+		"data.limit.max.journal.article.count";
+
+	public static final String DATA_LIMIT_MAX_JOURNAL_FOLDER_COUNT =
+		"data.limit.max.journal.folder.count";
+
 	public static final String DATA_LIMIT_MAX_MAIL_MESSAGE_COUNT =
 		"data.limit.max.mail.message.count";
 
@@ -2038,6 +2044,9 @@ public interface PropsKeys {
 
 	public static final String MODULE_FRAMEWORK_EXPORT_PASSWORD_ATTRIBUTES =
 		"module.framework.export.password.attributes";
+
+	public static final String MODULE_FRAMEWORK_FILE_INSTALL_CFG_ENABLED =
+		"module.framework.file.install.cfg.enabled";
 
 	public static final String MODULE_FRAMEWORK_MARKETPLACE_DIR =
 		"module.framework.marketplace.dir";

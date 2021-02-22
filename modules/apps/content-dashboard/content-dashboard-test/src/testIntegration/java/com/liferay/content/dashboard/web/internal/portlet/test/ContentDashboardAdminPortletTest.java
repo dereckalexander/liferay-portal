@@ -19,6 +19,7 @@ import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
+import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.dynamic.data.mapping.test.util.DDMStructureTestUtil;
@@ -30,9 +31,6 @@ import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.test.util.JournalTestUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
-import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONArray;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.constants.LanguageConstants;
 import com.liferay.portal.kernel.model.Company;
@@ -64,17 +62,18 @@ import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portlet.test.MockLiferayPortletContext;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -83,9 +82,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import javax.portlet.Portlet;
-import javax.portlet.PortletContext;
 import javax.portlet.PortletPreferences;
-import javax.portlet.PortletRequestDispatcher;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -160,16 +157,14 @@ public class ContentDashboardAdminPortletTest {
 				childAssetVocabulary.getVocabularyId(), serviceContext);
 
 		try {
-			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {
-					assetCategory.getCategoryId(),
-					childAssetCategory.getCategoryId()
-				},
-				new String[0], new long[0], null);
+			JournalTestUtil.addArticle(
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {
+						assetCategory.getCategoryId(),
+						childAssetCategory.getCategoryId()
+					}));
 
 			Assert.assertEquals(
 				String.format(
@@ -214,13 +209,11 @@ public class ContentDashboardAdminPortletTest {
 			serviceContext);
 
 		try {
-			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {assetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
+			JournalTestUtil.addArticle(
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {assetCategory.getCategoryId()}));
 
 			Assert.assertEquals(
 				String.format(
@@ -284,853 +277,6 @@ public class ContentDashboardAdminPortletTest {
 	}
 
 	@Test
-	public void testGetProps() throws Exception {
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getCompanyId(), _company.getGroupId(),
-				_user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "audience");
-
-		AssetCategory assetCategory = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(),
-			RandomTestUtil.randomString(), assetVocabulary.getVocabularyId(),
-			serviceContext);
-
-		AssetVocabulary childAssetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "stage");
-
-		AssetCategory childAssetCategory =
-			_assetCategoryLocalService.addCategory(
-				_user.getUserId(), _company.getGroupId(),
-				RandomTestUtil.randomString(),
-				childAssetVocabulary.getVocabularyId(), serviceContext);
-
-		try {
-			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {
-					assetCategory.getCategoryId(),
-					childAssetCategory.getCategoryId()
-				},
-				new String[0], new long[0], null);
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest());
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			Assert.assertNotNull(props);
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				JSONUtil.put(
-					JSONUtil.put(
-						"categories",
-						JSONUtil.put(
-							JSONUtil.put(
-								"key",
-								String.valueOf(
-									childAssetCategory.getCategoryId())
-							).put(
-								"name",
-								childAssetCategory.getTitle(LocaleUtil.US)
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							))
-					).put(
-						"key", String.valueOf(assetCategory.getCategoryId())
-					).put(
-						"name", assetCategory.getTitle(LocaleUtil.US)
-					).put(
-						"value", 1L
-					).put(
-						"vocabularyName",
-						assetVocabulary.getTitle(LocaleUtil.US)
-					)
-				).toString(),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetCategoryLocalService.deleteAssetCategory(assetCategory);
-			_assetCategoryLocalService.deleteAssetCategory(childAssetCategory);
-		}
-	}
-
-	@Test
-	public void testGetPropsWithAssetCategoriesSortedByKey() throws Exception {
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getGroupId(), _user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.addVocabulary(
-				_user.getUserId(), _company.getGroupId(), "vocabulary",
-				serviceContext);
-
-		AssetCategory assetCategory1 = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(), "category-1",
-			assetVocabulary.getVocabularyId(), serviceContext);
-		AssetCategory assetCategory2 = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(), "category-2",
-			assetVocabulary.getVocabularyId(), serviceContext);
-
-		try {
-			JournalTestUtil.addArticle(
-				_group.getGroupId(), 0,
-				_getServiceContext(
-					_user.getUserId(), _group.getGroupId(),
-					new long[] {
-						assetCategory1.getCategoryId(),
-						assetCategory2.getCategoryId()
-					}));
-			JournalTestUtil.addArticle(
-				_group.getGroupId(), 0,
-				_getServiceContext(
-					_user.getUserId(), _group.getGroupId(),
-					new long[] {assetCategory2.getCategoryId()}));
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest(
-					new String[] {assetVocabulary.getName()},
-					LocaleUtil.getSiteDefault()));
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				JSONUtil.putAll(
-					JSONUtil.put(
-						"key", String.valueOf(assetCategory1.getCategoryId())
-					).put(
-						"name", "category-1"
-					).put(
-						"value", 1L
-					).put(
-						"vocabularyName", "vocabulary"
-					),
-					JSONUtil.put(
-						"key", String.valueOf(assetCategory2.getCategoryId())
-					).put(
-						"name", "category-2"
-					).put(
-						"value", 2L
-					).put(
-						"vocabularyName", "vocabulary"
-					)
-				).toString(),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetVocabularyLocalService.deleteAssetVocabulary(assetVocabulary);
-		}
-	}
-
-	@Test
-	public void testGetPropsWithChildAssetCategoriesSortedByKey()
-		throws Exception {
-
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getGroupId(), _user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.addVocabulary(
-				_user.getUserId(), _company.getGroupId(), "vocabulary",
-				serviceContext);
-
-		AssetCategory assetCategory = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(), "category",
-			assetVocabulary.getVocabularyId(), serviceContext);
-
-		AssetVocabulary childAssetVocabulary =
-			_assetVocabularyLocalService.addVocabulary(
-				_user.getUserId(), _company.getGroupId(), "child-vocabulary",
-				serviceContext);
-
-		AssetCategory childAssetCategory1 =
-			_assetCategoryLocalService.addCategory(
-				_user.getUserId(), _company.getGroupId(), "child-category-1",
-				childAssetVocabulary.getVocabularyId(), serviceContext);
-		AssetCategory childAssetCategory2 =
-			_assetCategoryLocalService.addCategory(
-				_user.getUserId(), _company.getGroupId(), "child-category-2",
-				childAssetVocabulary.getVocabularyId(), serviceContext);
-
-		try {
-			JournalTestUtil.addArticle(
-				_group.getGroupId(), 0,
-				_getServiceContext(
-					_user.getUserId(), _group.getGroupId(),
-					new long[] {
-						assetCategory.getCategoryId(),
-						childAssetCategory1.getCategoryId(),
-						childAssetCategory2.getCategoryId()
-					}));
-			JournalTestUtil.addArticle(
-				_group.getGroupId(), 0,
-				_getServiceContext(
-					_user.getUserId(), _group.getGroupId(),
-					new long[] {
-						assetCategory.getCategoryId(),
-						childAssetCategory2.getCategoryId()
-					}));
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest(
-					new String[] {
-						assetVocabulary.getName(),
-						childAssetVocabulary.getName()
-					},
-					LocaleUtil.getSiteDefault()));
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				JSONUtil.putAll(
-					JSONUtil.put(
-						"categories",
-						JSONUtil.putAll(
-							JSONUtil.put(
-								"key",
-								String.valueOf(
-									childAssetCategory1.getCategoryId())
-							).put(
-								"name", "child-category-1"
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName", "child-vocabulary"
-							),
-							JSONUtil.put(
-								"key",
-								String.valueOf(
-									childAssetCategory2.getCategoryId())
-							).put(
-								"name", "child-category-2"
-							).put(
-								"value", 2L
-							).put(
-								"vocabularyName", "child-vocabulary"
-							))
-					).put(
-						"key", String.valueOf(assetCategory.getCategoryId())
-					).put(
-						"name", "category"
-					).put(
-						"value", 2L
-					).put(
-						"vocabularyName", "vocabulary"
-					)
-				).toString(),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetVocabularyLocalService.deleteVocabulary(assetVocabulary);
-			_assetVocabularyLocalService.deleteVocabulary(childAssetVocabulary);
-		}
-	}
-
-	@Test
-	public void testGetPropsWithChildNoneAssetCategory() throws Exception {
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getCompanyId(), _company.getGroupId(),
-				_user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "audience");
-
-		AssetCategory assetCategory = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(),
-			RandomTestUtil.randomString(), assetVocabulary.getVocabularyId(),
-			serviceContext);
-
-		AssetVocabulary childAssetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "stage");
-
-		AssetCategory childAssetCategory =
-			_assetCategoryLocalService.addCategory(
-				_user.getUserId(), _company.getGroupId(),
-				RandomTestUtil.randomString(),
-				childAssetVocabulary.getVocabularyId(), serviceContext);
-
-		try {
-			JournalArticle journalArticle1 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle1,
-				new long[] {assetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
-
-			JournalArticle journalArticle2 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle2,
-				new long[] {
-					assetCategory.getCategoryId(),
-					childAssetCategory.getCategoryId()
-				},
-				new String[0], new long[0], null);
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest());
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			Assert.assertNotNull(props);
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				JSONUtil.putAll(
-					JSONUtil.put(
-						"categories",
-						JSONUtil.putAll(
-							JSONUtil.put(
-								"key",
-								String.valueOf(
-									childAssetCategory.getCategoryId())
-							).put(
-								"name",
-								childAssetCategory.getTitle(LocaleUtil.US)
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							),
-							JSONUtil.put(
-								"key", "none"
-							).put(
-								"name", "No Stage Specified"
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							))
-					).put(
-						"key", String.valueOf(assetCategory.getCategoryId())
-					).put(
-						"name", assetCategory.getTitle(LocaleUtil.US)
-					).put(
-						"value", 2L
-					).put(
-						"vocabularyName",
-						assetVocabulary.getTitle(LocaleUtil.US)
-					)
-				).toString(),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetCategoryLocalService.deleteAssetCategory(assetCategory);
-			_assetCategoryLocalService.deleteAssetCategory(childAssetCategory);
-		}
-	}
-
-	@Test
-	public void testGetPropsWithChildNoneAssetCategoryAndNoneAssetCategory()
-		throws Exception {
-
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getCompanyId(), _company.getGroupId(),
-				_user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "audience");
-
-		AssetCategory assetCategory1 = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(), "A1",
-			assetVocabulary.getVocabularyId(), serviceContext);
-		AssetCategory assetCategory2 = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(), "A2",
-			assetVocabulary.getVocabularyId(), serviceContext);
-
-		AssetVocabulary childAssetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "stage");
-
-		AssetCategory childAssetCategory =
-			_assetCategoryLocalService.addCategory(
-				_user.getUserId(), _company.getGroupId(), "S1",
-				childAssetVocabulary.getVocabularyId(), serviceContext);
-
-		try {
-			JournalArticle journalArticle1 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle1,
-				new long[] {
-					assetCategory1.getCategoryId(),
-					childAssetCategory.getCategoryId()
-				},
-				new String[0], new long[0], null);
-
-			JournalArticle journalArticle2 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle2,
-				new long[] {
-					assetCategory1.getCategoryId(),
-					assetCategory2.getCategoryId()
-				},
-				new String[0], new long[0], null);
-
-			JournalArticle journalArticle3 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle3,
-				new long[] {childAssetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest());
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			Assert.assertNotNull(props);
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				JSONUtil.putAll(
-					JSONUtil.put(
-						"categories",
-						JSONUtil.putAll(
-							JSONUtil.put(
-								"key",
-								String.valueOf(
-									childAssetCategory.getCategoryId())
-							).put(
-								"name", "S1"
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							),
-							JSONUtil.put(
-								"key", "none"
-							).put(
-								"name", "No Stage Specified"
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							))
-					).put(
-						"key", String.valueOf(assetCategory1.getCategoryId())
-					).put(
-						"name", "A1"
-					).put(
-						"value", 2L
-					).put(
-						"vocabularyName",
-						assetVocabulary.getTitle(LocaleUtil.US)
-					),
-					JSONUtil.put(
-						"categories",
-						JSONUtil.putAll(
-							JSONUtil.put(
-								"key", "none"
-							).put(
-								"name", "No Stage Specified"
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							))
-					).put(
-						"key", String.valueOf(assetCategory2.getCategoryId())
-					).put(
-						"name", "A2"
-					).put(
-						"value", 1L
-					).put(
-						"vocabularyName",
-						assetVocabulary.getTitle(LocaleUtil.US)
-					),
-					JSONUtil.put(
-						"categories",
-						JSONUtil.put(
-							JSONUtil.put(
-								"key",
-								String.valueOf(
-									childAssetCategory.getCategoryId())
-							).put(
-								"name", "S1"
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							))
-					).put(
-						"key", "none"
-					).put(
-						"name", "No Audience Specified"
-					).put(
-						"value", 1L
-					).put(
-						"vocabularyName",
-						assetVocabulary.getTitle(LocaleUtil.US)
-					)
-				).toString(),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetCategoryLocalService.deleteAssetCategory(assetCategory1);
-			_assetCategoryLocalService.deleteAssetCategory(childAssetCategory);
-		}
-	}
-
-	@Test
-	public void testGetPropsWithMissingCategorizedJournalArticle()
-		throws Exception {
-
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getCompanyId(), _company.getGroupId(),
-				_user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "audience");
-
-		AssetCategory assetCategory = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(),
-			RandomTestUtil.randomString(), assetVocabulary.getVocabularyId(),
-			serviceContext);
-
-		AssetVocabulary childAssetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "stage");
-
-		AssetCategory childAssetCategory =
-			_assetCategoryLocalService.addCategory(
-				_user.getUserId(), _company.getGroupId(),
-				RandomTestUtil.randomString(),
-				childAssetVocabulary.getVocabularyId(), serviceContext);
-
-		try {
-			JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest());
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			Assert.assertNotNull(props);
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				String.valueOf(JSONFactoryUtil.createJSONArray()),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetCategoryLocalService.deleteAssetCategory(assetCategory);
-			_assetCategoryLocalService.deleteAssetCategory(childAssetCategory);
-		}
-	}
-
-	@Test
-	public void testGetPropsWithMissingCategorizedJournalArticleWithAssetCategory()
-		throws Exception {
-
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getCompanyId(), _company.getGroupId(),
-				_user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "audience");
-
-		AssetCategory assetCategory = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(),
-			RandomTestUtil.randomString(), assetVocabulary.getVocabularyId(),
-			serviceContext);
-
-		AssetVocabulary childAssetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "stage");
-
-		AssetCategory childAssetCategory =
-			_assetCategoryLocalService.addCategory(
-				_user.getUserId(), _company.getGroupId(),
-				RandomTestUtil.randomString(),
-				childAssetVocabulary.getVocabularyId(), serviceContext);
-
-		try {
-			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {childAssetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest());
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			Assert.assertNotNull(props);
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				JSONUtil.put(
-					JSONUtil.put(
-						"key",
-						String.valueOf(childAssetCategory.getCategoryId())
-					).put(
-						"name", childAssetCategory.getTitle(LocaleUtil.US)
-					).put(
-						"value", 1L
-					).put(
-						"vocabularyName",
-						childAssetVocabulary.getTitle(LocaleUtil.US)
-					)
-				).toString(),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetCategoryLocalService.deleteAssetCategory(assetCategory);
-			_assetCategoryLocalService.deleteAssetCategory(childAssetCategory);
-		}
-	}
-
-	@Test
-	public void testGetPropsWithMissingChildAssetVocabularies()
-		throws Exception {
-
-		JournalTestUtil.addArticle(_user.getUserId(), _group.getGroupId(), 0);
-
-		Map<String, Object> data = _getData(
-			_getMockLiferayPortletRenderRequest());
-
-		Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-		Assert.assertNotNull(props);
-
-		JSONArray vocabulariesJSONArray = (JSONArray)props.get("vocabularies");
-
-		Assert.assertEquals(
-			String.valueOf(JSONFactoryUtil.createJSONArray()),
-			vocabulariesJSONArray.toString());
-	}
-
-	@Test
-	public void testGetPropsWithMissingChildAssetVocabulary() throws Exception {
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getCompanyId(), _company.getGroupId(),
-				_user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "audience");
-
-		AssetCategory assetCategory = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(),
-			RandomTestUtil.randomString(), assetVocabulary.getVocabularyId(),
-			serviceContext);
-
-		try {
-			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {assetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest());
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			Assert.assertNotNull(props);
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				JSONUtil.put(
-					JSONUtil.put(
-						"key", String.valueOf(assetCategory.getCategoryId())
-					).put(
-						"name", assetCategory.getTitle(LocaleUtil.US)
-					).put(
-						"value", 1L
-					).put(
-						"vocabularyName",
-						assetVocabulary.getTitle(LocaleUtil.US)
-					)
-				).toString(),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetCategoryLocalService.deleteAssetCategory(assetCategory);
-		}
-	}
-
-	@Test
-	public void testGetPropsWithNoneAssetCategory() throws Exception {
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				_company.getCompanyId(), _company.getGroupId(),
-				_user.getUserId());
-
-		AssetVocabulary assetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "audience");
-
-		AssetCategory assetCategory = _assetCategoryLocalService.addCategory(
-			_user.getUserId(), _company.getGroupId(),
-			RandomTestUtil.randomString(), assetVocabulary.getVocabularyId(),
-			serviceContext);
-
-		AssetVocabulary childAssetVocabulary =
-			_assetVocabularyLocalService.fetchGroupVocabulary(
-				serviceContext.getScopeGroupId(), "stage");
-
-		AssetCategory childAssetCategory =
-			_assetCategoryLocalService.addCategory(
-				_user.getUserId(), _company.getGroupId(),
-				RandomTestUtil.randomString(),
-				childAssetVocabulary.getVocabularyId(), serviceContext);
-
-		try {
-			JournalArticle journalArticle1 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle1,
-				new long[] {
-					assetCategory.getCategoryId(),
-					childAssetCategory.getCategoryId()
-				},
-				new String[0], new long[0], null);
-
-			JournalArticle journalArticle2 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle2,
-				new long[] {childAssetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
-
-			Map<String, Object> data = _getData(
-				_getMockLiferayPortletRenderRequest());
-
-			Map<String, Object> props = (Map<String, Object>)data.get("props");
-
-			Assert.assertNotNull(props);
-
-			JSONArray vocabulariesJSONArray = (JSONArray)props.get(
-				"vocabularies");
-
-			Assert.assertEquals(
-				JSONUtil.putAll(
-					JSONUtil.put(
-						"categories",
-						JSONUtil.put(
-							JSONUtil.put(
-								"key",
-								String.valueOf(
-									childAssetCategory.getCategoryId())
-							).put(
-								"name",
-								childAssetCategory.getTitle(LocaleUtil.US)
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							))
-					).put(
-						"key", String.valueOf(assetCategory.getCategoryId())
-					).put(
-						"name", assetCategory.getTitle(LocaleUtil.US)
-					).put(
-						"value", 1L
-					).put(
-						"vocabularyName",
-						assetVocabulary.getTitle(LocaleUtil.US)
-					)
-				).put(
-					JSONUtil.put(
-						"categories",
-						JSONUtil.put(
-							JSONUtil.put(
-								"key",
-								String.valueOf(
-									childAssetCategory.getCategoryId())
-							).put(
-								"name",
-								childAssetCategory.getTitle(LocaleUtil.US)
-							).put(
-								"value", 1L
-							).put(
-								"vocabularyName",
-								childAssetVocabulary.getTitle(LocaleUtil.US)
-							))
-					).put(
-						"key", "none"
-					).put(
-						"name", "No Audience Specified"
-					).put(
-						"value", 1L
-					).put(
-						"vocabularyName",
-						assetVocabulary.getTitle(LocaleUtil.US)
-					)
-				).toString(),
-				vocabulariesJSONArray.toString());
-		}
-		finally {
-			_assetCategoryLocalService.deleteAssetCategory(assetCategory);
-			_assetCategoryLocalService.deleteAssetCategory(childAssetCategory);
-		}
-	}
-
-	@Test
 	public void testGetSearchContainer() throws Exception {
 		User user = UserTestUtil.addGroupAdminUser(_group);
 
@@ -1184,13 +330,10 @@ public class ContentDashboardAdminPortletTest {
 
 		try {
 			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {assetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
-
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {assetCategory.getCategoryId()}));
 			JournalTestUtil.addArticle(
 				_user.getUserId(), _group.getGroupId(), 0);
 
@@ -1223,18 +366,14 @@ public class ContentDashboardAdminPortletTest {
 	@Test
 	public void testGetSearchContainerWithAssetTag() throws Exception {
 		JournalArticle journalArticle1 = JournalTestUtil.addArticle(
-			_user.getUserId(), _group.getGroupId(), 0);
+			_group.getGroupId(), 0,
+			ServiceContextTestUtil.getServiceContext(
+				_group.getGroupId(), _user.getUserId(), new String[] {"tag1"}));
 
-		_journalArticleLocalService.updateAsset(
-			_user.getUserId(), journalArticle1, new long[0],
-			new String[] {"tag1"}, new long[0], null);
-
-		JournalArticle journalArticle2 = JournalTestUtil.addArticle(
-			_user.getUserId(), _group.getGroupId(), 0);
-
-		_journalArticleLocalService.updateAsset(
-			_user.getUserId(), journalArticle2, new long[0],
-			new String[] {"tag2"}, new long[0], null);
+		JournalTestUtil.addArticle(
+			_group.getGroupId(), 0,
+			ServiceContextTestUtil.getServiceContext(
+				_group.getGroupId(), _user.getUserId(), new String[] {"tag2"}));
 
 		MockLiferayPortletRenderRequest mockLiferayPortletRenderRequest =
 			_getMockLiferayPortletRenderRequest();
@@ -1421,6 +560,79 @@ public class ContentDashboardAdminPortletTest {
 	}
 
 	@Test
+	public void testGetSearchContainerWithExpiredJournalArticle()
+		throws Exception {
+
+		User user = UserTestUtil.addGroupAdminUser(_group);
+
+		Group group = GroupTestUtil.addGroup(
+			_company.getCompanyId(), _user.getUserId(), 0);
+
+		try {
+			MockLiferayPortletRenderRequest mockLiferayPortletRenderRequest =
+				_getMockLiferayPortletRenderRequest();
+
+			SearchContainer<Object> searchContainer = _getSearchContainer(
+				mockLiferayPortletRenderRequest);
+
+			int initialCount = searchContainer.getTotal();
+
+			ServiceContext serviceContext =
+				ServiceContextTestUtil.getServiceContext(
+					group.getGroupId(), user.getUserId());
+
+			DDMForm ddmForm = DDMStructureTestUtil.getSampleDDMForm(
+				"content", "string", "text", true, "textarea",
+				new Locale[] {LocaleUtil.getSiteDefault()},
+				LocaleUtil.getSiteDefault());
+
+			DDMStructure ddmStructure = DDMStructureTestUtil.addStructure(
+				group.getGroupId(), JournalArticle.class.getName(), 0, ddmForm,
+				LocaleUtil.getSiteDefault(),
+				ServiceContextTestUtil.getServiceContext());
+
+			DDMTemplate ddmTemplate = DDMTemplateTestUtil.addTemplate(
+				group.getGroupId(),
+				PortalUtil.getClassNameId(DDMStructure.class),
+				ddmStructure.getStructureId(),
+				PortalUtil.getClassNameId(JournalArticle.class));
+
+			JournalArticle journalArticle =
+				_journalArticleLocalService.addArticle(
+					serviceContext.getUserId(),
+					serviceContext.getScopeGroupId(), 0,
+					JournalArticleConstants.CLASS_NAME_ID_DEFAULT, 0,
+					StringPool.BLANK, true, 2.0,
+					Collections.singletonMap(
+						LocaleUtil.getSiteDefault(), "Test Article"),
+					null,
+					DDMStructureTestUtil.getSampleStructuredContent(
+						Collections.singletonMap(
+							LocaleUtil.getSiteDefault(),
+							RandomTestUtil.randomString()),
+						LocaleUtil.toLanguageId(LocaleUtil.getSiteDefault())),
+					ddmStructure.getStructureKey(),
+					ddmTemplate.getTemplateKey(), null, 1, 1, 1965, 0, 0, 0, 0,
+					0, 0, 0, true, 0, 0, 0, 0, 0, true, true, false, null, null,
+					null, null, serviceContext);
+
+			JournalTestUtil.expireArticle(
+				_group.getGroupId(), journalArticle, 2.0);
+
+			searchContainer = _getSearchContainer(
+				mockLiferayPortletRenderRequest);
+
+			int actualCount = searchContainer.getTotal();
+
+			Assert.assertEquals(initialCount + 1, actualCount);
+		}
+		finally {
+			GroupTestUtil.deleteGroup(group);
+			_userLocalService.deleteUser(user);
+		}
+	}
+
+	@Test
 	public void testGetSearchContainerWithInternalAssetCategory()
 		throws Exception {
 
@@ -1440,13 +652,10 @@ public class ContentDashboardAdminPortletTest {
 
 		try {
 			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {assetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
-
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {assetCategory.getCategoryId()}));
 			JournalTestUtil.addArticle(
 				_user.getUserId(), _group.getGroupId(), 0);
 
@@ -1527,24 +736,20 @@ public class ContentDashboardAdminPortletTest {
 			serviceContext);
 
 		try {
-			JournalArticle journalArticle1 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle1,
-				new long[] {assetCategory1.getCategoryId()}, new String[0],
-				new long[0], null);
+			JournalTestUtil.addArticle(
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {assetCategory1.getCategoryId()}));
 
 			JournalArticle journalArticle2 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle2,
-				new long[] {
-					assetCategory1.getCategoryId(),
-					assetCategory2.getCategoryId()
-				},
-				new String[0], new long[0], null);
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {
+						assetCategory1.getCategoryId(),
+						assetCategory2.getCategoryId()
+					}));
 
 			MockLiferayPortletRenderRequest mockLiferayPortletRenderRequest =
 				_getMockLiferayPortletRenderRequest();
@@ -1579,19 +784,16 @@ public class ContentDashboardAdminPortletTest {
 
 	@Test
 	public void testGetSearchContainerWithMultipleAssetTags() throws Exception {
-		JournalArticle journalArticle1 = JournalTestUtil.addArticle(
-			_user.getUserId(), _group.getGroupId(), 0);
-
-		_journalArticleLocalService.updateAsset(
-			_user.getUserId(), journalArticle1, new long[0],
-			new String[] {"tag1"}, new long[0], null);
+		JournalTestUtil.addArticle(
+			_group.getGroupId(), 0,
+			ServiceContextTestUtil.getServiceContext(
+				_group.getGroupId(), _user.getUserId(), new String[] {"tag1"}));
 
 		JournalArticle journalArticle2 = JournalTestUtil.addArticle(
-			_user.getUserId(), _group.getGroupId(), 0);
-
-		_journalArticleLocalService.updateAsset(
-			_user.getUserId(), journalArticle2, new long[0],
-			new String[] {"tag1", "tag2"}, new long[0], null);
+			_group.getGroupId(), 0,
+			ServiceContextTestUtil.getServiceContext(
+				_group.getGroupId(), _user.getUserId(),
+				new String[] {"tag1", "tag2"}));
 
 		MockLiferayPortletRenderRequest mockLiferayPortletRenderRequest =
 			_getMockLiferayPortletRenderRequest();
@@ -1770,24 +972,20 @@ public class ContentDashboardAdminPortletTest {
 			serviceContext);
 
 		try {
-			JournalArticle journalArticle1 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle1,
-				new long[] {assetCategory1.getCategoryId()}, new String[0],
-				new long[0], null);
+			JournalTestUtil.addArticle(
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {assetCategory1.getCategoryId()}));
 
 			JournalArticle journalArticle2 = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle2,
-				new long[] {
-					assetCategory1.getCategoryId(),
-					assetCategory2.getCategoryId()
-				},
-				new String[0], new long[0], null);
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {
+						assetCategory1.getCategoryId(),
+						assetCategory2.getCategoryId()
+					}));
 
 			MockLiferayPortletRenderRequest mockLiferayPortletRenderRequest =
 				_getMockLiferayPortletRenderRequest();
@@ -2166,16 +1364,14 @@ public class ContentDashboardAdminPortletTest {
 				childAssetVocabulary.getVocabularyId(), serviceContext);
 
 		try {
-			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {
-					assetCategory.getCategoryId(),
-					childAssetCategory.getCategoryId()
-				},
-				new String[0], new long[0], null);
+			JournalTestUtil.addArticle(
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {
+						assetCategory.getCategoryId(),
+						childAssetCategory.getCategoryId()
+					}));
 
 			Assert.assertTrue(_isSwapConfigurationEnabled("audience", "stage"));
 		}
@@ -2204,13 +1400,11 @@ public class ContentDashboardAdminPortletTest {
 			serviceContext);
 
 		try {
-			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {assetCategory.getCategoryId()}, new String[0],
-				new long[0], null);
+			JournalTestUtil.addArticle(
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {assetCategory.getCategoryId()}));
 
 			Assert.assertFalse(
 				_isSwapConfigurationEnabled("audience", "stage"));
@@ -2249,16 +1443,14 @@ public class ContentDashboardAdminPortletTest {
 				childAssetVocabulary.getVocabularyId(), serviceContext);
 
 		try {
-			JournalArticle journalArticle = JournalTestUtil.addArticle(
-				_user.getUserId(), _group.getGroupId(), 0);
-
-			_journalArticleLocalService.updateAsset(
-				_user.getUserId(), journalArticle,
-				new long[] {
-					assetCategory.getCategoryId(),
-					childAssetCategory.getCategoryId()
-				},
-				new String[0], new long[0], null);
+			JournalTestUtil.addArticle(
+				_group.getGroupId(), 0,
+				ServiceContextTestUtil.getServiceContext(
+					_group.getGroupId(), _user.getUserId(),
+					new long[] {
+						assetCategory.getCategoryId(),
+						childAssetCategory.getCategoryId()
+					}));
 
 			Assert.assertFalse(_isSwapConfigurationEnabled("audience"));
 		}
@@ -2331,27 +1523,7 @@ public class ContentDashboardAdminPortletTest {
 		mockLiferayPortletRenderRequest.setAttribute(
 			MVCRenderConstants.
 				PORTLET_CONTEXT_OVERRIDE_REQUEST_ATTIBUTE_NAME_PREFIX + path,
-			ProxyUtil.newProxyInstance(
-				PortletContext.class.getClassLoader(),
-				new Class<?>[] {PortletContext.class},
-				(PortletContextProxy, portletContextMethod,
-				 portletContextArgs) -> {
-
-					if (Objects.equals(
-							portletContextMethod.getName(),
-							"getRequestDispatcher") &&
-						Objects.equals(portletContextArgs[0], path)) {
-
-						return ProxyUtil.newProxyInstance(
-							PortletRequestDispatcher.class.getClassLoader(),
-							new Class<?>[] {PortletRequestDispatcher.class},
-							(portletRequestDispatcherProxy,
-							 portletRequestDispatcherMethod,
-							 portletRequestDispatcherArgs) -> null);
-					}
-
-					throw new UnsupportedOperationException();
-				}));
+			new MockLiferayPortletContext(path));
 
 		mockLiferayPortletRenderRequest.setAttribute(
 			WebKeys.THEME_DISPLAY, _getThemeDisplay(locale));
@@ -2379,18 +1551,6 @@ public class ContentDashboardAdminPortletTest {
 			mockLiferayPortletRenderRequest.getAttribute(
 				"CONTENT_DASHBOARD_ADMIN_DISPLAY_CONTEXT"),
 			"getSearchContainer", new Class<?>[0]);
-	}
-
-	private ServiceContext _getServiceContext(
-			long userId, long groupId, long[] assetCategoryIds)
-		throws PortalException {
-
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(groupId, userId);
-
-		serviceContext.setAssetCategoryIds(assetCategoryIds);
-
-		return serviceContext;
 	}
 
 	private ThemeDisplay _getThemeDisplay(Locale locale) throws Exception {

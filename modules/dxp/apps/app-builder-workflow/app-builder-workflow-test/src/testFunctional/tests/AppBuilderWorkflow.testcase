@@ -6,7 +6,7 @@ definition {
 	property portal.upstream = "true";
 	property test.run.environment = "EE";
 	property testray.component.names = "App Builder,Workflow";
-	property testray.main.component.name = "Workflow";
+	property testray.main.component.name = "App Builder";
 
 	setUp {
 		TestCase.setUpPortalInstance();
@@ -48,7 +48,8 @@ definition {
 	@description = "Assign an entry (task) through the App's table view"
 	@priority = "5"
 	test AssignEntryThroughTableView {
-		property portal.acceptance = "true";
+		property portal.acceptance = "quarantine";
+		property portal.upstream = "quarantine";
 
 		AppBuilderAdmin.addCustomObject(
 			customObjectName = "my custom object",
@@ -109,16 +110,6 @@ definition {
 			userFirstName = "userfn2",
 			userLastName = "userln2",
 			userScreenName = "usersn2");
-
-		ApplicationsMenu.gotoPortlet(
-			category = "Security",
-			panel = "Control Panel",
-			portlet = "Password Policies");
-
-		PasswordPolicies.togglePasswordChangeRequired(
-			enableChangeRequired = "true",
-			passwordPolicyName = "Default Password Policy",
-			passwordPolicyPanel = "Password Changes");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",
@@ -251,6 +242,68 @@ definition {
 		AppBuilderWorkflow.assertFormViewSelected(
 			formViewName = "My Form View",
 			positionNumber = "2");
+	}
+
+	@description = "LRQA-63715 Automate LPS-111511: As an App Admin, I want to create a new Object and Form during the Workflow App creation experience"
+	@priority = "4"
+	test CancelCreationOfObjectAndForm {
+		ApplicationsMenu.gotoPortlet(
+			category = "App Builder",
+			panel = "Applications",
+			portlet = "Apps");
+
+		AppBuilderAppAdmin.goToWorkflowPoweredTab();
+		AppBuilderAppAdmin.clickOnPlusButton();
+		AppBuilderWorkflow.selectDataAndViewsCard();
+		AppBuilderWorkflow.clickOnSelectObject();
+		AppBuilderWorkflow.clickOnAddNewCustomObjectButton();
+		AppBuilderWorkflow.assertButtonDisabled(buttonName = "Continue");
+		AppBuilderWorkflow.cancelCustomObjectCreation();
+
+		AppBuilderWorkflow.assertObjectSelected(objectName = "Select Object");
+
+		AppBuilderWorkflow.clickOnSelectObject();
+		AppBuilderWorkflow.addNewObject(objectName = "my custom object");
+		AppBuilderAdmin.cancel();
+
+		AppBuilderWorkflow.assertObjectSelected(objectName = "my custom object");
+		AppBuilderWorkflow.assertFormViewSelected(
+			formViewName = "Select a Form View",
+			positionNumber = "1");
+
+		AppBuilderWorkflow.clickOnSelectFormView(positionNumber = "1");
+		AppBuilderWorkflow.clickToCreateFormView(positionNumber = "1");
+		AppBuilderWorkflow.assertButtonDisabled(buttonName = "Save");
+	}
+
+	@description = "LRQA-63305 Automate LPS-112673: As an App Admin, I want to create a new Table View for an existing Object in the Workflow App creation UX"
+	@priority = "4"
+	test CancelCreationOfTableView {
+		AppBuilderAdmin.addCustomObject(
+			customObjectName = "my custom object",
+			isCreatingFormView = "true",
+			isCreatingViaPlusIcon = "true");
+
+		FormViewBuilder.addFormView(
+			fieldType = "Text",
+			formViewName = "My Form View");
+
+		ApplicationsMenu.gotoPortlet(
+			category = "App Builder",
+			panel = "Applications",
+			portlet = "Apps");
+
+		AppBuilderAppAdmin.goToWorkflowPoweredTab();
+		AppBuilderAppAdmin.clickOnPlusButton();
+		AppBuilderWorkflow.selectDataAndViewsCard();
+		AppBuilderWorkflow.clickOnSelectObject();
+		AppBuilderWorkflow.selectObject(objectName = "my custom object");
+		AppBuilderWorkflow.clickOnSelectTableView();
+		AppBuilderWorkflow.clickToCreateTableView();
+		AppBuilderAdmin.cancel();
+		AppBuilderWorkflow.assertTableViewSelected(tableViewName = "Select a Table View");
+		AppBuilderWorkflow.clickToCreateTableView();
+		AppBuilderWorkflow.assertButtonDisabled(buttonName = "Save");
 	}
 
 	@description = "Create a Basic Workflow App"
@@ -1470,7 +1523,8 @@ definition {
 	@description = "Validete Form View in 'Read-Only' and 'Editable' mode'"
 	@priority = "4"
 	test ValidateFormViewModes {
-		property portal.acceptance = "true";
+		property portal.acceptance = "quarantine";
+		property portal.upstream = "quarantine";
 
 		var formViewName = "My Form View";
 		var tableViewName = "My Table View";
@@ -1775,7 +1829,8 @@ definition {
 	@description = "LRQA-60598 - Automate LPS-111001: As an App Admin, I want to Liferay to handle multiple running versions of my App every time I make an update on a existing App"
 	@priority = "5"
 	test ValidateMultipleRunningVersions {
-		property portal.acceptance = "true";
+		property portal.acceptance = "quarantine";
+		property portal.upstream = "quarantine";
 
 		AppBuilderAdmin.addCustomObject(
 			customObjectName = "my custom object",
@@ -2036,6 +2091,7 @@ definition {
 	}
 
 	@description = "LRQA-61050 - Automate smoke tests from LPS-111006"
+	@ignore = "true"
 	@priority = "5"
 	test ViewWorkflowAppThroughNotifications {
 		property portal.acceptance = "true";
@@ -2146,6 +2202,7 @@ definition {
 	}
 
 	@description = "LRQA-61051 - Automate LPS-111006: As an App User, I want to my Workflowed App's notifications to redirect me to the App's entry (task) View instead of the "My Workflow Tasks""
+	@ignore = "true"
 	@priority = "4"
 	test ViewWorkflowAppThroughNotifications_SiteMenuAndOtherUser {
 		JSONLayout.addPublicLayout(
@@ -2157,16 +2214,6 @@ definition {
 			userFirstName = "userfn",
 			userLastName = "userln",
 			userScreenName = "usersn");
-
-		ApplicationsMenu.gotoPortlet(
-			category = "Security",
-			panel = "Control Panel",
-			portlet = "Password Policies");
-
-		PasswordPolicies.togglePasswordChangeRequired(
-			enableChangeRequired = "true",
-			passwordPolicyName = "Default Password Policy",
-			passwordPolicyPanel = "Password Changes");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "Users",

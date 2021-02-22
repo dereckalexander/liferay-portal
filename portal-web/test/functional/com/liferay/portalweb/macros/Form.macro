@@ -77,7 +77,7 @@ definition {
 	macro configureEmailNotifications {
 		AssertClick(
 			locator1 = "Form#SETTINGS_TAB_EMAIL_NOTIFICATIONS",
-			value1 = "Email Notifications");
+			value1 = "Notifications");
 
 		FormFields.enableSwitcher(fieldName = "sendEmailNotification");
 
@@ -104,6 +104,16 @@ definition {
 		FormFields.enableSwitcher(fieldName = "requireCaptcha");
 
 		Button.clickDone();
+	}
+
+	macro configureSubmitLabel {
+		AssertClick(
+			locator1 = "Form#SETTINGS_TAB_PERSONALIZATION",
+			value1 = "Personalization");
+
+		FormFields.editText(
+			fieldName = "submitLabel",
+			fieldValue = "${submitLabel}");
 	}
 
 	macro configureWorkflow {
@@ -486,7 +496,7 @@ definition {
 			fieldName = "${fieldName}",
 			fieldValue = "${fieldValue}");
 
-		AssertElementNotPresent(locator1 = "Button#SUBMIT");
+		AssertElementNotPresent(locator1 = "FormPortlet#SUBMIT_BUTTON");
 	}
 
 	macro publishForm {

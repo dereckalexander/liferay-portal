@@ -52,8 +52,8 @@ import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.PortletProvider;
 import com.liferay.portal.kernel.portlet.PortletProviderUtil;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
-import com.liferay.portal.kernel.service.permission.PortalPermissionUtil;
 import com.liferay.portal.kernel.settings.GroupServiceSettingsLocator;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
@@ -137,7 +137,7 @@ public class CommerceChannelDisplayContext
 				CommerceShippingTaxConfiguration.class,
 				new GroupServiceSettingsLocator(
 					commerceChannel.getGroupId(),
-					CommerceConstants.TAX_SERVICE_NAME));
+					CommerceConstants.SERVICE_NAME_TAX));
 
 		return _cpTaxCategoryLocalService.fetchCPTaxCategory(
 			commerceShippingTaxConfiguration.taxCategoryId());
@@ -366,8 +366,12 @@ public class CommerceChannelDisplayContext
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		return PortalPermissionUtil.contains(
-			themeDisplay.getPermissionChecker(),
+		PortletResourcePermission portletResourcePermission =
+			_commerceChannelModelResourcePermission.
+				getPortletResourcePermission();
+
+		return portletResourcePermission.contains(
+			themeDisplay.getPermissionChecker(), null,
 			CPActionKeys.ADD_COMMERCE_CHANNEL);
 	}
 
@@ -409,7 +413,7 @@ public class CommerceChannelDisplayContext
 				CommerceOrderCheckoutConfiguration.class,
 				new GroupServiceSettingsLocator(
 					commerceChannel.getGroupId(),
-					CommerceConstants.ORDER_SERVICE_NAME));
+					CommerceConstants.SERVICE_NAME_ORDER));
 
 		return commerceOrderCheckoutConfiguration.guestCheckoutEnabled();
 	}
@@ -422,7 +426,7 @@ public class CommerceChannelDisplayContext
 				CommerceOrderFieldsConfiguration.class,
 				new GroupServiceSettingsLocator(
 					commerceChannel.getGroupId(),
-					CommerceConstants.ORDER_SERVICE_NAME));
+					CommerceConstants.SERVICE_NAME_ORDER));
 
 		return commerceOrderFieldsConfiguration.showPurchaseOrderNumber();
 	}
@@ -462,7 +466,7 @@ public class CommerceChannelDisplayContext
 				CommerceOrderFieldsConfiguration.class,
 				new GroupServiceSettingsLocator(
 					commerceChannel.getGroupId(),
-					CommerceConstants.ORDER_FIELDS_SERVICE_NAME));
+					CommerceConstants.SERVICE_NAME_ORDER_FIELDS));
 
 		return _commerceOrderFieldsConfiguration;
 	}

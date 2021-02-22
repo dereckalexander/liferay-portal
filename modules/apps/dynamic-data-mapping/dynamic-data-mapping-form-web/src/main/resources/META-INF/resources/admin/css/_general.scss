@@ -92,6 +92,34 @@ td.lfr-name-column {
 		}
 	}
 
+	.input-group-item.input-group-append:first-child {
+		.ddm-field-text.form-control {
+			border-bottom-right-radius: 0.25rem;
+			border-top-right-radius: 0.25rem;
+		}
+	}
+
+	.modal-body {
+		padding: 0;
+
+		.component-tbar {
+			height: 48px;
+			padding: 0 12px;
+
+			.nav-link {
+				height: 100%;
+			}
+		}
+
+		.tab-pane {
+			padding: 16px 12px 8px;
+		}
+	}
+
+	.modal-footer {
+		padding-right: 20px;
+	}
+
 	.navbar-nav {
 		float: none;
 		margin-right: 0;

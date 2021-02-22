@@ -22,8 +22,8 @@ import com.liferay.account.retriever.AccountUserRetriever;
 import com.liferay.account.service.AccountEntryLocalService;
 import com.liferay.account.service.AccountEntryOrganizationRelLocalService;
 import com.liferay.account.service.AccountEntryUserRelLocalService;
-import com.liferay.account.service.AccountGroupAccountEntryRelLocalService;
 import com.liferay.account.service.AccountGroupLocalService;
+import com.liferay.account.service.AccountGroupRelLocalService;
 import com.liferay.account.service.test.util.AccountEntryTestUtil;
 import com.liferay.account.service.test.util.AccountGroupTestUtil;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
@@ -863,8 +863,9 @@ public class AccountEntryLocalServiceTest {
 
 		AccountEntry accountEntry = _addAccountEntry();
 
-		_accountGroupAccountEntryRelLocalService.addAccountGroupAccountEntryRel(
-			accountGroupId, accountEntry.getAccountEntryId());
+		_accountGroupRelLocalService.addAccountGroupRel(
+			accountGroupId, AccountEntry.class.getName(),
+			accountEntry.getAccountEntryId());
 
 		return accountEntry;
 	}
@@ -1074,11 +1075,10 @@ public class AccountEntryLocalServiceTest {
 	private AccountEntryUserRelLocalService _accountEntryUserRelLocalService;
 
 	@Inject
-	private AccountGroupAccountEntryRelLocalService
-		_accountGroupAccountEntryRelLocalService;
+	private AccountGroupLocalService _accountGroupLocalService;
 
 	@Inject
-	private AccountGroupLocalService _accountGroupLocalService;
+	private AccountGroupRelLocalService _accountGroupRelLocalService;
 
 	@Inject
 	private AccountUserRetriever _accountUserRetriever;

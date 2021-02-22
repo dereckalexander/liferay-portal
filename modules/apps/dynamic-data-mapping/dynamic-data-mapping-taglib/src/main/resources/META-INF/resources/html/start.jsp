@@ -20,7 +20,7 @@
 
 <div class="lfr-ddm-container" id="<%= randomNamespace %>">
 	<c:if test="<%= ddmForm != null %>">
-		<div class="input-group-item input-group-item-shrink input-localized-content <%= hideClass %>" role="menu" style="justify-content: flex-end;">
+		<div class="input-group-item input-group-item-shrink input-localized-content <%= hideCssClass %>" role="menu" style="justify-content: flex-end;">
 
 			<%
 			String defaultLanguageId = null;
@@ -75,7 +75,7 @@
 							String linkCssClass = "dropdown-item palette-item";
 
 							Locale curLocale = LocaleUtil.fromLanguageId(curLanguageId);
-							%>
+						%>
 
 							<c:if test="<%= showLanguageSelector %>">
 								<liferay-ui:icon

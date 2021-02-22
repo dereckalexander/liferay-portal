@@ -83,6 +83,14 @@ public class DataLayoutRendererImpl implements DataLayoutRenderer {
 		DDMFormRenderingContext ddmFormRenderingContext =
 			new DDMFormRenderingContext();
 
+		if (Validator.isNotNull(
+				dataLayoutRendererContext.getDefaultLanguageId())) {
+
+			ddmFormRenderingContext.addProperty(
+				"defaultLanguageId",
+				dataLayoutRendererContext.getDefaultLanguageId());
+		}
+
 		ddmFormRenderingContext.setContainerId(
 			dataLayoutRendererContext.getContainerId());
 		ddmFormRenderingContext.setDDMFormValues(
@@ -91,6 +99,7 @@ public class DataLayoutRendererImpl implements DataLayoutRenderer {
 				null));
 		ddmFormRenderingContext.setDDMStructureLayoutId(dataLayoutId);
 		ddmFormRenderingContext.setGroupId(groupId);
+		ddmFormRenderingContext.setEditOnlyInDefaultLanguage(true);
 		ddmFormRenderingContext.setHttpServletRequest(
 			dataLayoutRendererContext.getHttpServletRequest());
 		ddmFormRenderingContext.setHttpServletResponse(

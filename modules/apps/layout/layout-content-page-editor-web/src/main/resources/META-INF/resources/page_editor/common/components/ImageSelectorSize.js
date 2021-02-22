@@ -13,12 +13,17 @@
  */
 
 import ClayForm, {ClaySelectWithOption} from '@clayui/form';
+import {useIsMounted} from 'frontend-js-react-web';
 import PropTypes from 'prop-types';
 import React, {useEffect, useState} from 'react';
 
+import {useGetFieldValue} from '../../app/components/CollectionItemContext';
 import {useGlobalContext} from '../../app/components/GlobalContext';
+import selectLanguageId from '../../app/selectors/selectLanguageId';
 import ImageService from '../../app/services/ImageService';
 import {useSelector} from '../../app/store/index';
+import isMapped from '../../app/utils/editable-value/isMapped';
+import resolveEditableValue from '../../app/utils/editable-value/resolveEditableValue';
 import {useId} from '../../app/utils/useId';
 
 export const DEFAULT_IMAGE_SIZE_ID = 'auto';
@@ -31,18 +36,38 @@ const DEFAULT_IMAGE_SIZE = {
 
 export const ImageSelectorSize = ({
 	editableElement = null,
-	fileEntryId = DEFAULT_IMAGE_SIZE_ID,
+	fieldValue,
 	imageSizeId,
 	onImageSizeIdChanged = null,
 }) => {
+	const [fileEntryId, setFileEntryId] = useState(
+		fieldValue.fileEntryId || ''
+	);
+	const getFieldValue = useGetFieldValue();
+	const globalContext = useGlobalContext();
 	const imageSizeSelectId = useId();
 	const [imageSize, setImageSize] = useState(DEFAULT_IMAGE_SIZE);
 	const [imageSizes, setImageSizes] = useState([]);
+	const isMounted = useIsMounted();
+	const languageId = useSelector(selectLanguageId);
 	const selectedViewportSize = useSelector(
 		(state) => state.selectedViewportSize
 	);
 
-	const globalContext = useGlobalContext();
+	useEffect(() => {
+		if (fieldValue.fileEntryId) {
+			setFileEntryId(fieldValue.fileEntryId);
+		}
+		else if (isMapped(fieldValue)) {
+			resolveEditableValue(fieldValue, languageId, getFieldValue).then(
+				(value) => {
+					if (isMounted()) {
+						setFileEntryId(value?.fileEntryId || '');
+					}
+				}
+			);
+		}
+	}, [fieldValue, getFieldValue, isMounted, languageId]);
 
 	useEffect(() => {
 		const computedImageSize =
@@ -72,12 +97,14 @@ export const ImageSelectorSize = ({
 
 				setImageSize({
 					...autoSize,
-					width:
+					width: parseInt(
 						autoSize.width ||
-						editableElement?.naturalWidth ||
-						editableElement?.getBoundingClientRect().width ||
-						globalContext.document.body.getBoundingClientRect()
-							.width,
+							editableElement?.naturalWidth ||
+							editableElement?.getBoundingClientRect().width ||
+							globalContext.document.body.getBoundingClientRect()
+								.width,
+						10
+					),
 				});
 			};
 
@@ -108,6 +135,12 @@ export const ImageSelectorSize = ({
 	]);
 
 	useEffect(() => {
+		if (!fileEntryId) {
+			setImageSizes([]);
+
+			return;
+		}
+
 		ImageService.getAvailableImageConfigurations({
 			fileEntryId,
 			onNetworkStatus: () => {},
@@ -165,7 +198,19 @@ export const ImageSelectorSize = ({
 
 ImageSelectorSize.propTypes = {
 	editableElement: PropTypes.object,
-	fileEntryId: PropTypes.number.isRequired,
+	fieldValue: PropTypes.oneOfType([
+		PropTypes.shape({
+			fileEntryId: PropTypes.string.isRequired,
+		}),
+		PropTypes.shape({
+			classNameId: PropTypes.string.isRequired,
+			classPK: PropTypes.string.isRequired,
+			fieldId: PropTypes.string.isRequired,
+		}),
+		PropTypes.shape({
+			collectionFieldId: PropTypes.string.isRequired,
+		}),
+	]).isRequired,
 	imageSizeId: PropTypes.string,
 	onImageSizeIdChanged: PropTypes.func,
 };

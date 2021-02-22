@@ -1420,8 +1420,9 @@ public class GitWorkingDirectory {
 		return getRebasedLocalGitBranch(
 			pullRequest.getLocalSenderBranchName(),
 			pullRequest.getSenderBranchName(), pullRequest.getSenderRemoteURL(),
-			pullRequest.getSenderSHA(), pullRequest.getUpstreamBranchName(),
-			pullRequest.getLiferayRemoteBranchSHA());
+			pullRequest.getSenderSHA(),
+			pullRequest.getUpstreamRemoteGitBranchName(),
+			pullRequest.getUpstreamBranchSHA());
 	}
 
 	public LocalGitBranch getRebasedLocalGitBranch(
@@ -2197,8 +2198,8 @@ public class GitWorkingDirectory {
 		long epochTimestamp = (long)unixTimestamp * 1000;
 
 		return GitCommitFactory.newLocalGitCommit(
-			this, matcher.group("message"), matcher.group("sha"),
-			epochTimestamp);
+			matcher.group("email"), this, matcher.group("message"),
+			matcher.group("sha"), epochTimestamp);
 	}
 
 	protected File getRealGitDirectory(File gitFile) {
@@ -2549,7 +2550,7 @@ public class GitWorkingDirectory {
 
 		List<LocalGitCommit> localGitCommits = new ArrayList<>(num);
 
-		String gitLog = _log(start, num, file, "%H %ct %s", sha);
+		String gitLog = _log(start, num, file, "%H %ct %ae %s", sha);
 
 		gitLog = gitLog.replaceAll("Finished executing Bash commands.", "");
 
@@ -2628,7 +2629,8 @@ public class GitWorkingDirectory {
 	private static final Pattern _gitDirectoryPathPattern = Pattern.compile(
 		"gitdir\\: (.*)\\s*");
 	private static final Pattern _gitLogEntityPattern = Pattern.compile(
-		"(?<sha>[0-9a-f]{40}) (?<commitTime>\\d+) (?<message>.*)");
+		"(?<sha>[0-9a-f]{40}) (?<commitTime>\\d+) (?<email>[^\\s]+) " +
+			"(?<message>.*)");
 	private static final Map<String, List<File>> _modifiedFilesMap =
 		new HashMap<>();
 	private static final List<String> _privateOnlyGitRepositoryNames =

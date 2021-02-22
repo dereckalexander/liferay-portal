@@ -55,14 +55,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
-import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -153,6 +151,15 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 	}
 
 	@Override
+	public void acceptAlert() {
+		Alert alert = getAlert();
+
+		alert.accept();
+
+		setAlert(null);
+	}
+
+	@Override
 	public void addSelection(String locator, String optionLocator) {
 		Select select = new Select(getWebElement(locator));
 
@@ -218,13 +225,28 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 
 	@Override
 	public void assertAlert(String pattern) throws Exception {
-		TestCase.assertEquals(pattern, getAlert());
+		TestCase.assertEquals(pattern, getAlertText());
 	}
 
 	@Override
 	public void assertAlertNotPresent() throws Exception {
 		if (isAlertPresent()) {
 			throw new Exception("Alert is present");
+		}
+	}
+
+	@Override
+	public void assertAlertText(String pattern) throws Exception {
+		Alert alert = getAlert();
+
+		String alertText = alert.getText();
+
+		if (!pattern.equals(alertText)) {
+			String message = StringUtil.combine(
+				"Expected text \"", pattern, "\" does not match actual text \"",
+				alertText, "\"");
+
+			throw new Exception(message);
 		}
 	}
 
@@ -480,7 +502,7 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 
 	@Override
 	public void assertNotAlert(String pattern) {
-		TestCase.assertTrue(Objects.equals(pattern, getAlert()));
+		TestCase.assertTrue(Objects.equals(pattern, getAlertText()));
 	}
 
 	@Override
@@ -838,6 +860,15 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 	}
 
 	@Override
+	public void dismissAlert() {
+		Alert alert = getAlert();
+
+		alert.dismiss();
+
+		setAlert(null);
+	}
+
+	@Override
 	public void doubleClick(String locator) {
 		WebElement webElement = getWebElement(locator);
 
@@ -1012,17 +1043,6 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 	@Override
 	public void get(String url) {
 		_webDriver.get(url);
-	}
-
-	@Override
-	public String getAlert() {
-		switchTo();
-
-		WebDriverWait webDriverWait = new WebDriverWait(this, 1);
-
-		Alert alert = webDriverWait.until(ExpectedConditions.alertIsPresent());
-
-		return alert.getText();
 	}
 
 	@Override
@@ -3052,6 +3072,13 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 	}
 
 	@Override
+	public void typeAlert(String value) {
+		Alert alert = getAlert();
+
+		alert.sendKeys(value);
+	}
+
+	@Override
 	public void typeAlloyEditor(String locator, String value) {
 		WebElement webElement = getWebElement(locator);
 
@@ -3158,25 +3185,15 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 
 		int i = 0;
 
-		Set<Integer> specialCharIndexes = getSpecialCharIndexes(value);
+		Matcher matcher = _tabPattern.matcher(value);
 
-		for (int specialCharIndex : specialCharIndexes) {
-			webElement.sendKeys(value.substring(i, specialCharIndex));
+		while (matcher.find()) {
+			webElement.sendKeys(
+				value.substring(matcher.start(), matcher.end() - 1));
 
-			String specialChar = String.valueOf(value.charAt(specialCharIndex));
+			webElement.sendKeys(Keys.TAB);
 
-			if (specialChar.equals("-")) {
-				webElement.sendKeys(Keys.SUBTRACT);
-			}
-			else if (specialChar.equals("\t")) {
-				webElement.sendKeys(Keys.TAB);
-			}
-			else {
-				webElement.sendKeys(
-					Keys.SHIFT, _keysSpecialChars.get(specialChar));
-			}
-
-			i = specialCharIndex + 1;
+			i = matcher.end();
 		}
 
 		webElement.sendKeys(value.substring(i));
@@ -3618,6 +3635,28 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 		sb.append("', true, false);element.dispatchEvent(event);");
 
 		javascriptExecutor.executeScript(sb.toString(), webElement);
+	}
+
+	protected Alert getAlert() {
+		if (_alert == null) {
+			switchTo();
+
+			WebDriverWait webDriverWait = new WebDriverWait(this, 1);
+
+			_alert = webDriverWait.until(ExpectedConditions.alertIsPresent());
+		}
+
+		return _alert;
+	}
+
+	protected String getAlertText() {
+		switchTo();
+
+		WebDriverWait webDriverWait = new WebDriverWait(this, 1);
+
+		Alert alert = webDriverWait.until(ExpectedConditions.alertIsPresent());
+
+		return alert.getText();
 	}
 
 	protected By getBy(String locator) {
@@ -4207,27 +4246,6 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 		};
 	}
 
-	protected Set<Integer> getSpecialCharIndexes(String value) {
-		Set<Integer> specialCharIndexes = new TreeSet<>();
-
-		Set<String> specialChars = new TreeSet<>();
-
-		specialChars.addAll(_keysSpecialChars.keySet());
-
-		specialChars.add("-");
-		specialChars.add("\t");
-
-		for (String specialChar : specialChars) {
-			while (value.contains(specialChar)) {
-				specialCharIndexes.add(value.indexOf(specialChar));
-
-				value = StringUtil.replaceFirst(value, specialChar, " ");
-			}
-		}
-
-		return specialCharIndexes;
-	}
-
 	protected Condition getTextCaseInsensitiveCondition(
 		String locator, String value) {
 
@@ -4594,6 +4612,10 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 		select.selectByIndex(index);
 	}
 
+	protected void setAlert(Alert alert) {
+		_alert = alert;
+	}
+
 	protected void setDefaultWindowHandle(String defaultWindowHandle) {
 		_defaultWindowHandle = defaultWindowHandle;
 	}
@@ -4684,20 +4706,8 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 				put("SHIFT", Integer.valueOf(KeyEvent.VK_SHIFT));
 			}
 		};
-	private static final Map<String, String> _keysSpecialChars =
-		new HashMap<String, String>() {
-			{
-				put("!", "1");
-				put("#", "3");
-				put("$", "4");
-				put("%", "5");
-				put("&", "7");
-				put("(", "9");
-				put(")", "0");
-				put("<", ",");
-				put(">", ".");
-			}
-		};
+	private static final Pattern _tabPattern = Pattern.compile(
+		".*?(\\t).*?", Pattern.DOTALL);
 
 	static {
 		String testDependenciesDirName = PropsValues.TEST_DEPENDENCIES_DIR_NAME;
@@ -4737,6 +4747,7 @@ public abstract class BaseWebDriverImpl implements LiferaySelenium, WebDriver {
 		_TEST_DEPENDENCIES_DIR_NAME = testDependenciesDirName;
 	}
 
+	private Alert _alert;
 	private String _clipBoard = "";
 	private String _defaultWindowHandle;
 	private Stack<WebElement> _frameWebElements = new Stack<>();

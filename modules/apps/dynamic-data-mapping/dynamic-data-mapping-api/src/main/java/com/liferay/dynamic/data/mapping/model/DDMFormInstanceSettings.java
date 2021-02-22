@@ -45,7 +45,7 @@ import org.osgi.annotation.versioning.ProviderType;
 	paginationMode = com.liferay.dynamic.data.mapping.model.DDMFormLayout.TABBED_MODE,
 	value = {
 		@DDMFormLayoutPage(
-			title = "%form-options",
+			title = "%general",
 			value = {
 				@DDMFormLayoutRow(
 					{
@@ -53,8 +53,8 @@ import org.osgi.annotation.versioning.ProviderType;
 							size = 12,
 							value = {
 								"requireAuthentication", "requireCaptcha",
-								"autosaveEnabled", "redirectURL", "storageType",
-								"workflowDefinition", "submitLabel"
+								"autosaveEnabled", "storageType",
+								"workflowDefinition"
 							}
 						)
 					}
@@ -62,7 +62,19 @@ import org.osgi.annotation.versioning.ProviderType;
 			}
 		),
 		@DDMFormLayoutPage(
-			title = "%email-notifications",
+			title = "%personalization",
+			value = {
+				@DDMFormLayoutRow(
+					{
+						@DDMFormLayoutColumn(
+							size = 12, value = {"redirectURL", "submitLabel"}
+						)
+					}
+				)
+			}
+		),
+		@DDMFormLayoutPage(
+			title = "%notifications",
 			value = {
 				@DDMFormLayoutRow(
 					{
@@ -148,7 +160,10 @@ public interface DDMFormInstanceSettings {
 	)
 	public String storageType();
 
-	@DDMFormField(label = "%submit-button-label", type = "localizable_text")
+	@DDMFormField(
+		label = "%submit-button-label", properties = "placeholder=%submit-form",
+		type = "localizable_text"
+	)
 	public String submitLabel();
 
 	@DDMFormField(

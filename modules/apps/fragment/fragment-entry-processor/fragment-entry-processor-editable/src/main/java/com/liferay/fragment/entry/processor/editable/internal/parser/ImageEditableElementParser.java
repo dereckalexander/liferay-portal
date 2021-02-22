@@ -16,10 +16,8 @@ package com.liferay.fragment.entry.processor.editable.internal.parser;
 
 import com.liferay.fragment.entry.processor.editable.EditableFragmentEntryProcessor;
 import com.liferay.fragment.entry.processor.editable.parser.EditableElementParser;
+import com.liferay.fragment.entry.processor.helper.FragmentEntryProcessorHelper;
 import com.liferay.fragment.exception.FragmentEntryContentException;
-import com.liferay.info.item.ClassPKInfoItemIdentifier;
-import com.liferay.info.item.InfoItemIdentifier;
-import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.info.type.WebImage;
 import com.liferay.layout.responsive.ViewportSize;
@@ -32,7 +30,6 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Html;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -72,11 +69,14 @@ public class ImageEditableElementParser implements EditableElementParser {
 		String fieldName, Locale locale, Object fieldValue) {
 
 		String alt = StringPool.BLANK;
-		long fileEntryId = 0;
+		Object fileEntryId = 0;
 
 		if (fieldValue == null) {
 			alt = StringUtil.replace(
 				_TMPL_IMAGE_FIELD_ALT_TEMPLATE, "field_name", fieldName);
+			fileEntryId = StringUtil.replace(
+				_TMPL_IMAGE_FIELD_FILE_ENTRY_ID_TEMPLATE, "field_name",
+				fieldName);
 		}
 		else if (fieldValue instanceof JSONObject) {
 			JSONObject fieldValueJSONObject = (JSONObject)fieldValue;
@@ -91,12 +91,11 @@ public class ImageEditableElementParser implements EditableElementParser {
 			}
 
 			if (fieldValueJSONObject.has("className") &&
-				fieldValueJSONObject.has("classPK") &&
-				Objects.equals(
-					fieldValueJSONObject.getString("className"),
-					FileEntry.class.getName())) {
+				fieldValueJSONObject.has("classPK")) {
 
-				fileEntryId = fieldValueJSONObject.getLong("classPK");
+				fileEntryId = _fragmentEntryProcessorHelper.getFileEntryId(
+					fieldValueJSONObject.getString("className"),
+					fieldValueJSONObject.getLong("classPK"));
 			}
 			else if (fieldValueJSONObject.has("fileEntryId")) {
 				fileEntryId = fieldValueJSONObject.getLong("fileEntryId");
@@ -115,24 +114,8 @@ public class ImageEditableElementParser implements EditableElementParser {
 				alt = infoLocalizedValue.getValue(locale);
 			}
 
-			InfoItemReference infoItemReference =
-				webImage.getInfoItemReference();
-
-			if ((infoItemReference != null) &&
-				Objects.equals(
-					infoItemReference.getClassName(),
-					FileEntry.class.getName())) {
-
-				InfoItemIdentifier infoItemIdentifier =
-					infoItemReference.getInfoItemIdentifier();
-
-				if (infoItemIdentifier instanceof ClassPKInfoItemIdentifier) {
-					ClassPKInfoItemIdentifier classPKInfoItemIdentifier =
-						(ClassPKInfoItemIdentifier)infoItemIdentifier;
-
-					fileEntryId = classPKInfoItemIdentifier.getClassPK();
-				}
-			}
+			fileEntryId = _fragmentEntryProcessorHelper.getFileEntryId(
+				webImage);
 		}
 
 		return JSONUtil.put(
@@ -331,6 +314,12 @@ public class ImageEditableElementParser implements EditableElementParser {
 			"/META-INF/resources/fragment/entry/processor/editable" +
 				"/image_field_alt_template.tmpl");
 
+	private static final String _TMPL_IMAGE_FIELD_FILE_ENTRY_ID_TEMPLATE =
+		StringUtil.read(
+			EditableFragmentEntryProcessor.class,
+			"/META-INF/resources/fragment/entry/processor/editable" +
+				"/image_field_file_entry_id_template.tmpl");
+
 	private static final String _TMPL_IMAGE_FIELD_TEMPLATE = StringUtil.read(
 		EditableFragmentEntryProcessor.class,
 		"/META-INF/resources/fragment/entry/processor/editable" +
@@ -338,6 +327,9 @@ public class ImageEditableElementParser implements EditableElementParser {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ImageEditableElementParser.class);
+
+	@Reference
+	private FragmentEntryProcessorHelper _fragmentEntryProcessorHelper;
 
 	@Reference
 	private Html _html;

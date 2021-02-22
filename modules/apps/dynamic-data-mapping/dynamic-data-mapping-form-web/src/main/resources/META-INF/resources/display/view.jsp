@@ -178,12 +178,15 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 
 						<clay:container-fluid
 							cssClass="ddm-form-builder-app ddm-form-builder-app-not-ready"
-							id='<%= ddmFormDisplayContext.getContainerId() + "container" %>'
+							id="<%= ddmFormDisplayContext.getContainerId() %>"
 						>
-							<%= ddmFormDisplayContext.getDDMFormHTML() %>
-
-							<aui:input name="empty" type="hidden" value="" />
+							<react:component
+								module="admin/js/index.es"
+								props="<%= ddmFormDisplayContext.getDDMFormContext() %>"
+							/>
 						</clay:container-fluid>
+
+						<aui:input name="empty" type="hidden" value="" />
 					</aui:form>
 				</div>
 
@@ -226,7 +229,7 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 								<portlet:param name="preview" value="<%= String.valueOf(ddmFormDisplayContext.isPreview()) %>" />
 							</liferay-portlet:resourceURL>
 
-							Liferay.on('sessionExpired', function (event) {
+							Liferay.on('sessionExpired', (event) => {
 								<portlet:namespace />clearInterval(<portlet:namespace />intervalId);
 							});
 
@@ -277,7 +280,7 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 
 					function <portlet:namespace />enableForm() {
 						var container = document.querySelector(
-							'#<%= ddmFormDisplayContext.getContainerId() %>container'
+							'#<%= ddmFormDisplayContext.getContainerId() %>'
 						);
 
 						container.classList.remove('ddm-form-builder-app-not-ready');
@@ -289,7 +292,23 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 
 						<c:choose>
 							<c:when test="<%= ddmFormDisplayContext.isAutosaveEnabled() %>">
-								<portlet:namespace />startAutoSave();
+								var container = document.querySelector(
+									'#<%= ddmFormDisplayContext.getContainerId() %>'
+								);
+
+								container.onclick = function (event) {
+									<portlet:namespace />startAutoSave();
+
+									container.onclick = null;
+									container.onkeypress = null;
+								};
+
+								container.onkeypress = function (event) {
+									<portlet:namespace />startAutoSave();
+
+									container.onclick = null;
+									container.onkeypress = null;
+								};
 							</c:when>
 							<c:otherwise>
 								<portlet:namespace />startAutoExtendSession();
@@ -301,7 +320,7 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 						var rememberMe = true;
 					</c:if>
 
-					<portlet:namespace />sessionIntervalId = setInterval(function () {
+					<portlet:namespace />sessionIntervalId = setInterval(() => {
 						if (Liferay.Session || rememberMe) {
 							clearInterval(<portlet:namespace />sessionIntervalId);
 
@@ -315,7 +334,7 @@ long formInstanceId = ddmFormDisplayContext.getFormInstanceId();
 							else {
 								Liferay.componentReady(
 									'<%= ddmFormDisplayContext.getContainerId() %>'
-								).then(function (component) {
+								).then((component) => {
 									<portlet:namespace />form = component;
 
 									if (component) {

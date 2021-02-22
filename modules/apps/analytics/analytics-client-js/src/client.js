@@ -14,6 +14,7 @@
 
 import {
 	FLUSH_INTERVAL,
+	HEADER_PROJECT_ID,
 	LIMIT_FAILED_ATTEMPTS,
 	QUEUE_PRIORITY_DEFAULT,
 	REQUEST_TIMEOUT,
@@ -39,9 +40,11 @@ class Client {
 	constructor(config = {}) {
 		this.attemptNumber = 1;
 		this.initialDelay = config.delay || FLUSH_INTERVAL;
-		this.delay = this.initialDelay;
 		this.processing = false;
+		this.projectId = config.projectId;
 		this.queues = [];
+
+		this.delay = this.initialDelay;
 
 		this._startsFlushLoop();
 	}
@@ -56,6 +59,10 @@ class Client {
 	 */
 	_getRequestParameters() {
 		const headers = {'Content-Type': 'application/json'};
+
+		if (this.projectId) {
+			Object.assign(headers, {[HEADER_PROJECT_ID]: this.projectId});
+		}
 
 		return {
 			cache: 'default',
@@ -180,10 +187,10 @@ class Client {
 			return;
 		}
 
-		this.queues.reduce(
-			(previousPromise, {endpointUrl, instance: queue}) => {
-				return previousPromise.then(
-					() => {
+		this.queues
+			.reduce((previousPromise, {endpointUrl, instance: queue}) => {
+				return previousPromise
+					.then(() => {
 						if (!queue.hasMessages()) {
 							return Promise.resolve();
 						}
@@ -229,14 +236,14 @@ class Client {
 									return Promise.reject();
 								});
 						});
-					},
-					() => {
+					})
+					.catch(() => {
 						this.onRequestFail();
-					}
-				);
-			},
-			Promise.resolve()
-		);
+
+						return Promise.reject();
+					});
+			}, Promise.resolve())
+			.catch(() => {});
 	}
 
 	/**

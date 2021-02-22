@@ -73,7 +73,6 @@ renderResponse.setTitle(title);
 
 <liferay-frontend:edit-form
 	action="<%= editFolderURL %>"
-	cssClass="container-form-lg"
 	method="post"
 	name="fm"
 >
@@ -155,7 +154,7 @@ renderResponse.setTitle(title);
 								'<portlet:namespace />selectFolderButton'
 							);
 
-							selectFolderButton.addEventListener('click', function (event) {
+							selectFolderButton.addEventListener('click', (event) => {
 								Liferay.Util.openSelectionModal({
 									onSelect: function (selectedItem) {
 										if (selectedItem) {
@@ -383,7 +382,7 @@ renderResponse.setTitle(title);
 	);
 
 	if (selectDDMStructureButton) {
-		selectDDMStructureButton.addEventListener('click', function (event) {
+		selectDDMStructureButton.addEventListener('click', (event) => {
 			Liferay.Util.openSelectionModal({
 				onSelect: function (selectedItem) {
 					var ddmStructureLink =
@@ -426,7 +425,7 @@ renderResponse.setTitle(title);
 
 	searchContainer.get('contentBox').delegate(
 		'click',
-		function (event) {
+		(event) => {
 			var link = event.currentTarget;
 
 			var tr = link.ancestor('tr');

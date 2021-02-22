@@ -15,16 +15,16 @@
 import ClayLayout from '@clayui/layout';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useMemo} from 'react';
 
 import {getLayoutDataItemPropTypes} from '../../../prop-types/index';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../config/constants/layoutDataItemTypes';
 import {useSelector} from '../../store/index';
 import {getFrontendTokenValue} from '../../utils/getFrontendTokenValue';
 import {getResponsiveConfig} from '../../utils/getResponsiveConfig';
-import loadBackgroundImage from '../../utils/loadBackgroundImage';
-import {useBackgroundImageMediaQueries} from '../../utils/useBackgroundImageQueries';
+import useBackgroundImageValue from '../../utils/useBackgroundImageValue';
 import {useId} from '../../utils/useId';
+import {useGetFieldValue} from '../CollectionItemContext';
 
 const Row = React.forwardRef(
 	({children, className, item, withinTopper = false}, ref) => {
@@ -68,18 +68,13 @@ const Row = React.forwardRef(
 			width,
 		} = itemConfig.styles;
 
-		const [backgroundImageValue, setBackgroundImageValue] = useState('');
-
 		const elementId = useId();
-
-		const backgroundImageMediaQueries = useBackgroundImageMediaQueries(
+		const getFieldValue = useGetFieldValue();
+		const backgroundImageValue = useBackgroundImageValue(
 			elementId,
-			backgroundImage
+			backgroundImage,
+			getFieldValue
 		);
-
-		useEffect(() => {
-			loadBackgroundImage(backgroundImage).then(setBackgroundImageValue);
-		}, [backgroundImage]);
 
 		const style = {};
 
@@ -104,11 +99,16 @@ const Row = React.forwardRef(
 			style.width = width;
 		}
 
-		if (backgroundImageValue) {
-			style.backgroundImage = `url(${backgroundImageValue})`;
+		if (backgroundImageValue.url) {
+			style.backgroundImage = `url(${backgroundImageValue.url})`;
 			style.backgroundPosition = '50% 50%';
 			style.backgroundRepeat = 'no-repeat';
 			style.backgroundSize = 'cover';
+
+			if (backgroundImage?.fileEntryId) {
+				style['--background-image-file-entry-id'] =
+					backgroundImage.fileEntryId;
+			}
 		}
 
 		const rowContent = (
@@ -141,7 +141,10 @@ const Row = React.forwardRef(
 				ref={ref}
 				style={style}
 			>
-				<style>{backgroundImageMediaQueries}</style>
+				{backgroundImageValue.mediaQueries ? (
+					<style>{backgroundImageValue.mediaQueries}</style>
+				) : null}
+
 				{children}
 			</ClayLayout.Row>
 		);

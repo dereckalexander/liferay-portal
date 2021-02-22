@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.liferay.analytics.reports.web.internal.client.AsahFaroBackendClient;
 import com.liferay.analytics.reports.web.internal.model.AcquisitionChannel;
 import com.liferay.analytics.reports.web.internal.model.HistoricalMetric;
+import com.liferay.analytics.reports.web.internal.model.ReferringSocialMedia;
+import com.liferay.analytics.reports.web.internal.model.ReferringURL;
 import com.liferay.analytics.reports.web.internal.model.TimeRange;
 import com.liferay.analytics.reports.web.internal.model.TimeSpan;
 import com.liferay.analytics.reports.web.internal.model.TrafficChannel;
@@ -104,6 +106,40 @@ public class AnalyticsReportsDataProvider {
 		}
 	}
 
+	public List<ReferringURL> getDomainReferringURLs(long companyId, String url)
+		throws PortalException {
+
+		try {
+			String response = _asahFaroBackendClient.doGet(
+				companyId,
+				"api/1.0/pages/page-referrer-hosts?canonicalURL=" + url +
+					"&interval=D&rangeKey=30");
+
+			TypeFactory typeFactory = _objectMapper.getTypeFactory();
+
+			Map<String, Long> pageReferrerHosts = _objectMapper.readValue(
+				response,
+				typeFactory.constructMapType(
+					Map.class, typeFactory.constructType(String.class),
+					typeFactory.constructType(Long.class)));
+
+			Set<Map.Entry<String, Long>> entries = pageReferrerHosts.entrySet();
+
+			Stream<Map.Entry<String, Long>> entriesStream = entries.stream();
+
+			return entriesStream.map(
+				entry -> new ReferringURL(
+					Math.toIntExact(entry.getValue()), entry.getKey())
+			).collect(
+				Collectors.toList()
+			);
+		}
+		catch (Exception exception) {
+			throw new PortalException(
+				"Unable to get referring domains", exception);
+		}
+	}
+
 	public HistoricalMetric getHistoricalReadsHistoricalMetric(
 			long companyId, TimeRange timeRange, String url)
 		throws PortalException {
@@ -152,6 +188,76 @@ public class AnalyticsReportsDataProvider {
 		}
 	}
 
+	public List<ReferringURL> getPageReferringURLs(long companyId, String url)
+		throws PortalException {
+
+		try {
+			String response = _asahFaroBackendClient.doGet(
+				companyId,
+				"api/1.0/pages/page-referrers?canonicalURL=" + url +
+					"&interval=D&rangeKey=30");
+
+			TypeFactory typeFactory = _objectMapper.getTypeFactory();
+
+			Map<String, Long> pageReferrers = _objectMapper.readValue(
+				response,
+				typeFactory.constructMapType(
+					Map.class, typeFactory.constructType(String.class),
+					typeFactory.constructType(Long.class)));
+
+			Set<Map.Entry<String, Long>> entries = pageReferrers.entrySet();
+
+			Stream<Map.Entry<String, Long>> entriesStream = entries.stream();
+
+			return entriesStream.map(
+				entry -> new ReferringURL(
+					Math.toIntExact(entry.getValue()), entry.getKey())
+			).collect(
+				Collectors.toList()
+			);
+		}
+		catch (Exception exception) {
+			throw new PortalException(
+				"Unable to get referring pages", exception);
+		}
+	}
+
+	public List<ReferringSocialMedia> getReferringSocialMediaList(
+			long companyId, String url)
+		throws PortalException {
+
+		try {
+			String response = _asahFaroBackendClient.doGet(
+				companyId,
+				"api/1.0/pages/social-page-referrers?canonicalURL=" + url +
+					"&interval=D&rangeKey=30");
+
+			TypeFactory typeFactory = _objectMapper.getTypeFactory();
+
+			Map<String, Long> socialPageReferrers = _objectMapper.readValue(
+				response,
+				typeFactory.constructMapType(
+					Map.class, typeFactory.constructType(String.class),
+					typeFactory.constructType(Long.class)));
+
+			Set<Map.Entry<String, Long>> entries =
+				socialPageReferrers.entrySet();
+
+			Stream<Map.Entry<String, Long>> entriesStream = entries.stream();
+
+			return entriesStream.map(
+				entry -> new ReferringSocialMedia(
+					entry.getKey(), Math.toIntExact(entry.getValue()))
+			).collect(
+				Collectors.toList()
+			);
+		}
+		catch (Exception exception) {
+			throw new PortalException(
+				"Unable to get referring social media", exception);
+		}
+	}
+
 	public Long getTotalReads(long companyId, String url)
 		throws PortalException {
 
@@ -194,6 +300,15 @@ public class AnalyticsReportsDataProvider {
 			Map<String, TrafficSource> trafficSourceMap = getTrafficSources(
 				companyId, url);
 
+			List<ReferringURL> domainReferringURLs = getDomainReferringURLs(
+				companyId, url);
+
+			List<ReferringURL> pageReferringURLs = getPageReferringURLs(
+				companyId, url);
+
+			List<ReferringSocialMedia> referringSocialMediaList =
+				getReferringSocialMediaList(companyId, url);
+
 			Map<String, AcquisitionChannel> acquisitionChannels =
 				getAcquisitionChannels(companyId, url);
 
@@ -204,8 +319,8 @@ public class AnalyticsReportsDataProvider {
 
 			return stream.map(
 				acquisitionChannel -> TrafficChannelUtil.toTrafficChannel(
-					acquisitionChannel,
-					trafficSourceMap.get(acquisitionChannel.getName()))
+					acquisitionChannel, domainReferringURLs, pageReferringURLs,
+					referringSocialMediaList, trafficSourceMap)
 			).map(
 				trafficChannel -> new AbstractMap.SimpleEntry<>(
 					trafficChannel.getName(), trafficChannel)

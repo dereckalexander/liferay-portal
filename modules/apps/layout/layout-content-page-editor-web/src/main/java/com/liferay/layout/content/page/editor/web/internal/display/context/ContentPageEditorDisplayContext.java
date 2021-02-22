@@ -48,6 +48,7 @@ import com.liferay.item.selector.criteria.DownloadFileEntryItemSelectorReturnTyp
 import com.liferay.item.selector.criteria.InfoItemItemSelectorReturnType;
 import com.liferay.item.selector.criteria.InfoListItemSelectorReturnType;
 import com.liferay.item.selector.criteria.URLItemSelectorReturnType;
+import com.liferay.item.selector.criteria.UUIDItemSelectorReturnType;
 import com.liferay.item.selector.criteria.image.criterion.ImageItemSelectorCriterion;
 import com.liferay.item.selector.criteria.info.item.criterion.InfoItemItemSelectorCriterion;
 import com.liferay.item.selector.criteria.info.item.criterion.InfoListItemSelectorCriterion;
@@ -65,6 +66,7 @@ import com.liferay.layout.content.page.editor.web.internal.util.FragmentEntryLin
 import com.liferay.layout.content.page.editor.web.internal.util.StyleBookEntryUtil;
 import com.liferay.layout.content.page.editor.web.internal.util.layout.structure.LayoutStructureUtil;
 import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
+import com.liferay.layout.item.selector.criterion.LayoutItemSelectorCriterion;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil;
@@ -77,7 +79,6 @@ import com.liferay.layout.util.structure.CommonStylesUtil;
 import com.liferay.layout.util.structure.DropZoneLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.util.structure.LayoutStructureItem;
-import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.comment.Comment;
 import com.liferay.portal.kernel.comment.CommentManager;
@@ -161,7 +162,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -439,6 +439,10 @@ public class ContentPageEditorDisplayContext {
 				getResourceURL(
 					"/layout_content_page_editor/get_info_item_mapping_fields")
 			).put(
+				"getLayoutFriendlyURL",
+				getResourceURL(
+					"/layout_content_page_editor/get_layout_friendly_url")
+			).put(
 				"getPageContentsURL",
 				getResourceURL("/layout_content_page_editor/get_page_content")
 			).put(
@@ -448,11 +452,11 @@ public class ContentPageEditorDisplayContext {
 			).put(
 				"infoListSelectorURL", _getInfoListSelectorURL()
 			).put(
-				"languageDirection", _getLanguageDirection()
-			).put(
 				"layoutConversionWarningMessages",
 				MultiSessionMessages.get(
 					portletRequest, "layoutConversionWarningMessages")
+			).put(
+				"layoutItemSelectorURL", _getLayoutItemSelectorURL()
 			).put(
 				"layoutType", String.valueOf(_getLayoutType())
 			).put(
@@ -827,12 +831,9 @@ public class ContentPageEditorDisplayContext {
 				HashMapBuilder.<String, Object>put(
 					"languageIcon",
 					StringUtil.toLowerCase(
-						StringUtil.replace(
-							languageId, CharPool.UNDERLINE, CharPool.DASH))
+						LocaleUtil.toW3cLanguageId(languageId))
 				).put(
-					"languageLabel",
-					StringUtil.replace(
-						languageId, CharPool.UNDERLINE, CharPool.DASH)
+					"w3cLanguageId", LocaleUtil.toW3cLanguageId(languageId)
 				).build());
 		}
 
@@ -1658,18 +1659,21 @@ public class ContentPageEditorDisplayContext {
 		return itemSelectorURL.toString();
 	}
 
-	private Map<String, String> _getLanguageDirection() {
-		Map<String, String> languageDirection = new HashMap<>();
+	private String _getLayoutItemSelectorURL() {
+		LayoutItemSelectorCriterion layoutItemSelectorCriterion =
+			new LayoutItemSelectorCriterion();
 
-		for (Locale curLocale :
-				LanguageUtil.getAvailableLocales(getGroupId())) {
+		layoutItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+			new UUIDItemSelectorReturnType());
+		layoutItemSelectorCriterion.setMultiSelection(false);
+		layoutItemSelectorCriterion.setShowPrivatePages(true);
 
-			languageDirection.put(
-				LocaleUtil.toLanguageId(curLocale),
-				LanguageUtil.get(curLocale, "lang.dir"));
-		}
+		PortletURL itemSelectorURL = _itemSelector.getItemSelectorURL(
+			RequestBackedPortletURLFactoryUtil.create(httpServletRequest),
+			_renderResponse.getNamespace() + "selectLayout",
+			layoutItemSelectorCriterion);
 
-		return languageDirection;
+		return itemSelectorURL.toString();
 	}
 
 	private LayoutStructure _getLayoutStructure() throws Exception {

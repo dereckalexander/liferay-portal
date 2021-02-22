@@ -58,6 +58,13 @@ export const getFilteredSettingsContext = ({
 						editingLanguageId,
 					};
 
+					const {visibleProperties} = config;
+
+					if (visibleProperties.includes(fieldName)) {
+						updatedField.visibilityExpression = 'TRUE';
+						updatedField.visible = true;
+					}
+
 					if (unsupportedProperties.includes(fieldName)) {
 						return {
 							...updatedField,
@@ -73,6 +80,13 @@ export const getFilteredSettingsContext = ({
 							name: generateName(name, updatedField),
 							predefinedValue: '["manual"]',
 							readOnly: true,
+						};
+					}
+
+					if (fieldName === 'localizable') {
+						return {
+							...updatedField,
+							showAsSwitcher: true,
 						};
 					}
 

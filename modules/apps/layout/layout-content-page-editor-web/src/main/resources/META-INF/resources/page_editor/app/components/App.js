@@ -21,7 +21,7 @@ import {config} from '../config/index';
 import {reducer} from '../reducers/index';
 import selectLanguageId from '../selectors/selectLanguageId';
 import {StoreContextProvider, useSelector} from '../store/index';
-import {DragAndDropContextProvider} from '../utils/dragAndDrop/useDragAndDrop';
+import {DragAndDropContextProvider} from '../utils/drag-and-drop/useDragAndDrop';
 import {CollectionActiveItemContextProvider} from './CollectionActiveItemContext';
 import {ControlsProvider} from './Controls';
 import DragPreview from './DragPreview';
@@ -83,7 +83,7 @@ const LanguageDirection = () => {
 	const languageId = useSelector(selectLanguageId);
 
 	useEffect(() => {
-		const currentLanguageDirection = config.languageDirection[languageId];
+		const currentLanguageDirection = Liferay.Language.direction[languageId];
 		const wrapper = document.getElementById('wrapper');
 
 		if (wrapper) {

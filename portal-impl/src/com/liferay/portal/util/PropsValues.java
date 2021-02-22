@@ -623,6 +623,14 @@ public class PropsValues {
 		GetterUtil.getLong(
 			PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_DL_STORAGE_SIZE));
 
+	public static final long DATA_LIMIT_MAX_JOURNAL_ARTICLE_COUNT =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_JOURNAL_ARTICLE_COUNT));
+
+	public static final long DATA_LIMIT_MAX_JOURNAL_FOLDER_COUNT =
+		GetterUtil.getLong(
+			PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_JOURNAL_FOLDER_COUNT));
+
 	public static final long DATA_LIMIT_MAX_ORGANIZATION_COUNT =
 		GetterUtil.getLong(
 			PropsUtil.get(PropsKeys.DATA_LIMIT_MAX_ORGANIZATION_COUNT));
@@ -1725,6 +1733,10 @@ public class PropsValues {
 		GetterUtil.getBoolean(
 			PropsUtil.get(
 				PropsKeys.MODULE_FRAMEWORK_EXPORT_PASSWORD_ATTRIBUTES));
+
+	public static final boolean MODULE_FRAMEWORK_FILE_INSTALL_CFG_ENABLED =
+		GetterUtil.getBoolean(
+			PropsUtil.get(PropsKeys.MODULE_FRAMEWORK_FILE_INSTALL_CFG_ENABLED));
 
 	public static final String MODULE_FRAMEWORK_MARKETPLACE_DIR = PropsUtil.get(
 		PropsKeys.MODULE_FRAMEWORK_MARKETPLACE_DIR);

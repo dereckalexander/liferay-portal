@@ -151,10 +151,21 @@ export const createDuplicatedField = (originalField, props, blacklist = []) => {
 		);
 
 		duplicatedField.settingsContext = updateSettingsContextProperty(
+			defaultLanguageId,
 			props.editingLanguageId,
 			duplicatedField.settingsContext,
 			'rows',
 			duplicatedField.rows
+		);
+
+		duplicatedField.ddmStructureLayoutId = '';
+
+		duplicatedField.settingsContext = updateSettingsContextProperty(
+			defaultLanguageId,
+			props.editingLanguageId,
+			duplicatedField.settingsContext,
+			'ddmStructureLayoutId',
+			duplicatedField.ddmStructureLayoutId
 		);
 	}
 

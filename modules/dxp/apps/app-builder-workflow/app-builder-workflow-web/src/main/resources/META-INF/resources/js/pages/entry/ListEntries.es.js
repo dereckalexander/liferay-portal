@@ -9,36 +9,38 @@
  * distribution rights of the Software.
  */
 
+import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
 import ClayLabel from '@clayui/label';
 import {AppContext} from 'app-builder-web/js/AppContext.es';
-import Button from 'app-builder-web/js/components/button/Button.es';
 import NoPermissionState from 'app-builder-web/js/components/empty-state/NoPermissionState.es';
-import {Loading} from 'app-builder-web/js/components/loading/Loading.es';
-import ManagementToolbar from 'app-builder-web/js/components/management-toolbar/ManagementToolbar.es';
-import ManagementToolbarResultsBar from 'app-builder-web/js/components/management-toolbar/ManagementToolbarResultsBar.es';
-import SearchContext, {
-	reducer,
-} from 'app-builder-web/js/components/management-toolbar/SearchContext.es';
-import TableWithPagination from 'app-builder-web/js/components/table/TableWithPagination.es';
 import useDataListView from 'app-builder-web/js/hooks/useDataListView.es';
 import useEntriesActions from 'app-builder-web/js/hooks/useEntriesActions.es';
 import usePermissions from 'app-builder-web/js/hooks/usePermissions.es';
-import useQuery from 'app-builder-web/js/hooks/useQuery.es';
 import {
 	buildEntries,
 	navigateToEditPage,
 } from 'app-builder-web/js/pages/entry/utils.es';
-import {getItem} from 'app-builder-web/js/utils/client.es';
 import {getLocalizedUserPreferenceValue} from 'app-builder-web/js/utils/lang.es';
-import {errorToast} from 'app-builder-web/js/utils/toast.es';
-import {concatValues, isEqualObjects} from 'app-builder-web/js/utils/utils.es';
-import {usePrevious} from 'frontend-js-react-web';
+import Loading from 'data-engine-js-components-web/js/components/loading/Loading.es';
+import ManagementToolbar from 'data-engine-js-components-web/js/components/management-toolbar/ManagementToolbar.es';
+import ManagementToolbarResultsBar from 'data-engine-js-components-web/js/components/management-toolbar/ManagementToolbarResultsBar.es';
+import SearchContext, {
+	reducer,
+} from 'data-engine-js-components-web/js/components/management-toolbar/SearchContext.es';
+import TableWithPagination from 'data-engine-js-components-web/js/components/table/TableWithPagination.es';
+import useQuery from 'data-engine-js-components-web/js/hooks/useQuery.es';
+import {getItem} from 'data-engine-js-components-web/js/utils/client.es';
+import {errorToast} from 'data-engine-js-components-web/js/utils/toast.es';
+import {
+	concatValues,
+	isEqualObjects,
+} from 'data-engine-js-components-web/js/utils/utils.es';
+import {usePrevious, useTimeout} from 'frontend-js-react-web';
 import React, {useCallback, useContext, useEffect, useState} from 'react';
 
 import useAppWorkflow from '../../hooks/useAppWorkflow.es';
 import useDataRecordApps from '../../hooks/useDataRecordApps.es';
 import ReassignEntryModal from './ReassignEntryModal.es';
-import {METRIC_INDEXES_KEY, refreshIndex} from './actions.es';
 
 const WORKFLOW_COLUMNS = [
 	{key: 'status', value: Liferay.Language.get('status')},
@@ -63,6 +65,7 @@ export default function ListEntries({history}) {
 
 	const {appWorkflowDefinitionId} = useAppWorkflow(appId);
 	const dataRecordApps = useDataRecordApps(appId, dataRecordIds);
+	const delay = useTimeout();
 	const permissions = usePermissions();
 
 	const {
@@ -97,7 +100,12 @@ export default function ListEntries({history}) {
 
 	const previousQuery = usePrevious(query);
 
-	const doFetch = (query, workflowDefinitionId, refreshIndexes) => {
+	const doFetch = ({
+		entryInstanceId,
+		newAssignee,
+		query,
+		workflowDefinitionId,
+	}) => {
 		if (workflowDefinitionId) {
 			setFetchState((prevState) => ({
 				...prevState,
@@ -120,7 +128,7 @@ export default function ListEntries({history}) {
 						setDataRecordIds(classPKs);
 
 						const getWorkflowInfo = () => {
-							return getItem(
+							getItem(
 								`/o/portal-workflow-metrics/v1.0/processes/${workflowDefinitionId}/instances`,
 								{
 									classPKs,
@@ -129,6 +137,25 @@ export default function ListEntries({history}) {
 								}
 							).then((workflowResponse) => {
 								let items = response.items;
+								let retryCount = 0;
+
+								if (entryInstanceId) {
+									const {
+										assignees,
+									} = workflowResponse.items.find(
+										({id}) => id === entryInstanceId
+									);
+
+									if (
+										newAssignee &&
+										newAssignee.id !== assignees?.[0]?.id &&
+										retryCount <= 5
+									) {
+										retryCount++;
+
+										return delay(getWorkflowInfo, 1000);
+									}
+								}
 
 								if (workflowResponse.totalCount > 0) {
 									items = response.items.map((item) => {
@@ -161,14 +188,7 @@ export default function ListEntries({history}) {
 							});
 						};
 
-						if (refreshIndexes) {
-							refreshIndex(METRIC_INDEXES_KEY)
-								.then(getWorkflowInfo)
-								.catch(getWorkflowInfo);
-						}
-						else {
-							getWorkflowInfo();
-						}
+						getWorkflowInfo();
 					}
 				})
 				.catch(() => {
@@ -187,8 +207,13 @@ export default function ListEntries({history}) {
 			languageId: userLanguageId,
 		});
 
-	const refetch = (refreshIndexes) =>
-		doFetch(query, appWorkflowDefinitionId, refreshIndexes);
+	const refetch = ({entryInstanceId, newAssignee} = {}) =>
+		doFetch({
+			entryInstanceId,
+			newAssignee,
+			query,
+			workflowDefinitionId: appWorkflowDefinitionId,
+		});
 
 	const onCloseModal = () => {
 		setModalVisible(false);
@@ -284,7 +309,7 @@ export default function ListEntries({history}) {
 	}, [query]);
 
 	useEffect(() => {
-		doFetch(query, appWorkflowDefinitionId);
+		doFetch({query, workflowDefinitionId: appWorkflowDefinitionId});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [appWorkflowDefinitionId]);
 
@@ -341,11 +366,11 @@ export default function ListEntries({history}) {
 				<ManagementToolbar
 					addButton={() =>
 						showAddButton && (
-							<Button
+							<ClayButtonWithIcon
 								className="nav-btn nav-btn-monospaced"
 								onClick={onClickAddButton}
 								symbol="plus"
-								tooltip={Liferay.Language.get('new-entry')}
+								title={Liferay.Language.get('new-entry')}
 							/>
 						)
 					}
@@ -365,12 +390,12 @@ export default function ListEntries({history}) {
 					emptyState={{
 						button: () =>
 							showAddButton && (
-								<Button
+								<ClayButton
 									displayType="secondary"
 									onClick={onClickAddButton}
 								>
 									{Liferay.Language.get('new-entry')}
-								</Button>
+								</ClayButton>
 							),
 						title: Liferay.Language.get('there-are-no-entries-yet'),
 					}}

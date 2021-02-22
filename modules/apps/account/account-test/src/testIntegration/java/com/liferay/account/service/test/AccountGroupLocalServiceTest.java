@@ -18,8 +18,8 @@ import com.liferay.account.exception.DefaultAccountGroupException;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.model.AccountGroup;
 import com.liferay.account.service.AccountEntryLocalService;
-import com.liferay.account.service.AccountGroupAccountEntryRelLocalService;
 import com.liferay.account.service.AccountGroupLocalService;
+import com.liferay.account.service.AccountGroupRelLocalService;
 import com.liferay.account.service.test.util.AccountEntryTestUtil;
 import com.liferay.account.service.test.util.AccountGroupTestUtil;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
@@ -83,22 +83,21 @@ public class AccountGroupLocalServiceTest {
 	}
 
 	@Test
-	public void testDeleteAccountGroupWithAccountGroupAccountEntryRel()
-		throws Exception {
-
+	public void testDeleteAccountGroupWithAccountGroupRel() throws Exception {
 		AccountGroup accountGroup = _addAccountGroup();
 		AccountEntry accountEntry = AccountEntryTestUtil.addAccountEntry(
 			_accountEntryLocalService);
 
-		_accountGroupAccountEntryRelLocalService.addAccountGroupAccountEntryRel(
-			accountGroup.getAccountGroupId(), accountEntry.getAccountEntryId());
+		_accountGroupRelLocalService.addAccountGroupRel(
+			accountGroup.getAccountGroupId(), AccountEntry.class.getName(),
+			accountEntry.getAccountEntryId());
 
 		_accountGroupLocalService.deleteAccountGroup(accountGroup);
 
 		Assert.assertEquals(
 			0,
-			_accountGroupAccountEntryRelLocalService.
-				getAccountGroupAccountEntryRelsCountByAccountGroupId(
+			_accountGroupRelLocalService.
+				getAccountGroupRelsCountByAccountGroupId(
 					accountGroup.getAccountGroupId()));
 	}
 
@@ -286,11 +285,10 @@ public class AccountGroupLocalServiceTest {
 	private AccountEntryLocalService _accountEntryLocalService;
 
 	@Inject
-	private AccountGroupAccountEntryRelLocalService
-		_accountGroupAccountEntryRelLocalService;
+	private AccountGroupLocalService _accountGroupLocalService;
 
 	@Inject
-	private AccountGroupLocalService _accountGroupLocalService;
+	private AccountGroupRelLocalService _accountGroupRelLocalService;
 
 	@Inject
 	private UserLocalService _userLocalService;

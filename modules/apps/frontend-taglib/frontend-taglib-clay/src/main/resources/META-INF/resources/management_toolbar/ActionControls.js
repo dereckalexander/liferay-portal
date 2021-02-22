@@ -14,12 +14,11 @@
 
 import {ClayButtonWithIcon} from '@clayui/button';
 import {ClayDropDownWithItems} from '@clayui/drop-down';
-import ClayIcon from '@clayui/icon';
-import ClayLink from '@clayui/link';
 import ClayManagementToolbar from '@clayui/management-toolbar';
 import React from 'react';
 
 import getDataAttributes from '../get_data_attributes';
+import LinkOrButton from './LinkOrButton';
 
 const ActionControls = ({
 	actionDropdownItems,
@@ -29,7 +28,7 @@ const ActionControls = ({
 	return (
 		<>
 			{actionDropdownItems && (
-				<ClayManagementToolbar.ItemList>
+				<>
 					{actionDropdownItems
 						.filter((item) => item.quickAction && item.icon)
 						.map((item, index) => (
@@ -37,27 +36,19 @@ const ActionControls = ({
 								className="navbar-breakpoint-down-d-none"
 								key={index}
 							>
-								{item.href ? (
-									<ClayLink
-										className="nav-link nav-link-monospaced"
-										displayType="unstyled"
-										href={item.href}
-										title={item.label}
-									>
-										<ClayIcon symbol={item.icon} />
-									</ClayLink>
-								) : (
-									<ClayButtonWithIcon
-										className="nav-link nav-link-monospaced"
-										disabled={disabled}
-										displayType="unstyled"
-										onClick={(event) => {
-											onActionButtonClick(event, {item});
-										}}
-										symbol={item.icon}
-										title={item.label}
-									/>
-								)}
+								<LinkOrButton
+									className="nav-link nav-link-monospaced"
+									disabled={disabled || item.disabled}
+									displayType="unstyled"
+									href={item.href}
+									onClick={(event) => {
+										onActionButtonClick(event, {
+											item,
+										});
+									}}
+									symbol={item.icon}
+									title={item.label}
+								/>
 							</ClayManagementToolbar.Item>
 						))}
 
@@ -90,7 +81,7 @@ const ActionControls = ({
 							}
 						/>
 					</ClayManagementToolbar.Item>
-				</ClayManagementToolbar.ItemList>
+				</>
 			)}
 		</>
 	);

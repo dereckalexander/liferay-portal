@@ -429,6 +429,14 @@ public class DDMFormFieldTemplateContextFactory {
 			"dir", LanguageUtil.get(_locale, LanguageConstants.KEY_DIR));
 	}
 
+	protected void setDDMFormFieldTemplateContextEditOnlyInDefaultLanguage(
+		Map<String, Object> ddmFormFieldTemplateContext,
+		boolean editOnlyInDefaultLanguage) {
+
+		ddmFormFieldTemplateContext.put(
+			"editOnlyInDefaultLanguage", editOnlyInDefaultLanguage);
+	}
+
 	protected void setDDMFormFieldTemplateContextEnabled(
 		Map<String, Object> ddmFormFieldTemplateContext,
 		Map<String, Object> changedProperties, boolean defaultValue) {
@@ -585,6 +593,12 @@ public class DDMFormFieldTemplateContextFactory {
 		ddmFormFieldTemplateContext.put("showLabel", showLabel);
 	}
 
+	protected void setDDMFormFieldTemplateContextTransient(
+		Map<String, Object> ddmFormFieldTemplateContext, boolean isTransient) {
+
+		ddmFormFieldTemplateContext.put("transient", isTransient);
+	}
+
 	protected void setDDMFormFieldTemplateContextType(
 		Map<String, Object> ddmFormFieldTemplateContext, String type) {
 
@@ -727,6 +741,10 @@ public class DDMFormFieldTemplateContextFactory {
 				}
 			}
 
+			if (localizedValue instanceof JSONObject) {
+				localizedValue = localizedValue.toString();
+			}
+
 			localizedValues.put(
 				languageId,
 				GetterUtil.getObject(localizedValue, StringPool.BLANK));
@@ -787,6 +805,8 @@ public class DDMFormFieldTemplateContextFactory {
 			ddmFormFieldTemplateContext, ddmFormField.isRepeatable());
 		setDDMFormFieldTemplateContextShowLabel(
 			ddmFormFieldTemplateContext, ddmFormField.isShowLabel());
+		setDDMFormFieldTemplateContextTransient(
+			ddmFormFieldTemplateContext, ddmFormField.isTransient());
 		setDDMFormFieldTemplateContextType(
 			ddmFormFieldTemplateContext, ddmFormField.getType());
 		setDDMFormFieldTemplateContextVisibilityExpression(
@@ -802,6 +822,9 @@ public class DDMFormFieldTemplateContextFactory {
 		Map<String, Object> changedProperties, DDMFormField ddmFormField,
 		DDMFormFieldValue ddmFormFieldValue) {
 
+		setDDMFormFieldTemplateContextEditOnlyInDefaultLanguage(
+			ddmFormFieldTemplateContext,
+			_ddmFormRenderingContext.isEditOnlyInDefaultLanguage());
 		setDDMFormFieldTemplateContextEnabled(
 			ddmFormFieldTemplateContext, changedProperties, true);
 		setDDMFormFieldTemplateContextEvaluable(

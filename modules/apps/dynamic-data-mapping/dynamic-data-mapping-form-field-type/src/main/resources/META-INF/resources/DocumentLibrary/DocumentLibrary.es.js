@@ -77,9 +77,11 @@ function transformFileEntryProperties({fileEntryTitle, fileEntryURL, value}) {
 }
 
 const DocumentLibrary = ({
+	editingLanguageId,
 	fileEntryTitle = '',
 	fileEntryURL = '',
 	id,
+	message,
 	name,
 	onClearButtonClicked,
 	onSelectButtonClicked,
@@ -110,8 +112,10 @@ const DocumentLibrary = ({
 						<ClayInput
 							aria-label={Liferay.Language.get('file')}
 							className="bg-light field"
+							dir={Liferay.Language.direction[editingLanguageId]}
 							disabled={readOnly}
 							id={`${name}inputFile`}
+							lang={editingLanguageId}
 							onClick={onSelectButtonClicked}
 							value={transformedFileEntryTitle || ''}
 						/>
@@ -154,6 +158,8 @@ const DocumentLibrary = ({
 				type="hidden"
 				value={getValue(value)}
 			/>
+
+			{message && <div className="form-feedback-item">{message}</div>}
 		</div>
 	);
 };
@@ -162,6 +168,7 @@ const GuestUploadFile = ({
 	fileEntryTitle = '',
 	fileEntryURL = '',
 	id,
+	message,
 	name,
 	onClearButtonClicked,
 	onUploadSelectButtonClicked,
@@ -236,6 +243,8 @@ const GuestUploadFile = ({
 			/>
 
 			{progress !== 0 && <ClayProgressBar value={progress} />}
+
+			{message && <div className="form-feedback-item">{message}</div>}
 		</div>
 	);
 };
@@ -243,6 +252,7 @@ const GuestUploadFile = ({
 const Main = ({
 	allowGuestUsers,
 	displayErrors: initialDisplayErrors,
+	editingLanguageId,
 	errorMessage: initialErrorMessage,
 	fieldName,
 	fileEntryTitle,
@@ -252,6 +262,7 @@ const Main = ({
 	itemSelectorURL,
 	maximumRepetitions,
 	maximumSubmissionLimitReached,
+	message,
 	name,
 	onBlur,
 	onChange,
@@ -464,6 +475,7 @@ const Main = ({
 					fileEntryTitle={fileEntryTitle}
 					fileEntryURL={fileEntryURL}
 					id={id}
+					message={message}
 					name={name}
 					onClearButtonClicked={(event) => {
 						setCurrentValue(null);
@@ -480,9 +492,11 @@ const Main = ({
 				/>
 			) : (
 				<DocumentLibrary
+					editingLanguageId={editingLanguageId}
 					fileEntryTitle={fileEntryTitle}
 					fileEntryURL={fileEntryURL}
 					id={id}
+					message={message}
 					name={name}
 					onClearButtonClicked={(event) => {
 						setCurrentValue(null);

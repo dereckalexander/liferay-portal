@@ -20,7 +20,10 @@ import com.liferay.analytics.reports.web.internal.model.HistogramMetric;
 import com.liferay.analytics.reports.web.internal.model.HistoricalMetric;
 import com.liferay.analytics.reports.web.internal.model.OrganicTrafficChannelImpl;
 import com.liferay.analytics.reports.web.internal.model.PaidTrafficChannelImpl;
+import com.liferay.analytics.reports.web.internal.model.ReferringSocialMedia;
+import com.liferay.analytics.reports.web.internal.model.ReferringURL;
 import com.liferay.analytics.reports.web.internal.model.SearchKeyword;
+import com.liferay.analytics.reports.web.internal.model.SocialTrafficChannelImpl;
 import com.liferay.analytics.reports.web.internal.model.TimeRange;
 import com.liferay.analytics.reports.web.internal.model.TimeSpan;
 import com.liferay.analytics.reports.web.internal.model.TrafficChannel;
@@ -121,6 +124,37 @@ public class AnalyticsReportsDataProviderTest {
 	}
 
 	@Test
+	public void testGetDomainReferringURLs() throws Exception {
+		AnalyticsReportsDataProvider analyticsReportsDataProvider =
+			new AnalyticsReportsDataProvider(
+				_getHttp(
+					Collections.singletonMap(
+						"/page-referrer-hosts",
+						JSONUtil.put(
+							"abc.com", 3.0
+						).put(
+							"google.com", 6.0
+						).put(
+							"liferay.com", 1.0
+						).toString())));
+
+		List<ReferringURL> referringURLS =
+			analyticsReportsDataProvider.getDomainReferringURLs(
+				RandomTestUtil.randomLong(), RandomTestUtil.randomString());
+
+		Assert.assertEquals(referringURLS.toString(), 3, referringURLS.size());
+		Assert.assertEquals(
+			String.valueOf(new ReferringURL(1, "liferay.com")),
+			String.valueOf(referringURLS.get(0)));
+		Assert.assertEquals(
+			String.valueOf(new ReferringURL(6, "google.com")),
+			String.valueOf(referringURLS.get(1)));
+		Assert.assertEquals(
+			String.valueOf(new ReferringURL(3, "abc.com")),
+			String.valueOf(referringURLS.get(2)));
+	}
+
+	@Test
 	public void testGetHistoricalReadsHistoricalMetric() throws Exception {
 		LocalDate localDate = LocalDate.now();
 
@@ -168,6 +202,79 @@ public class AnalyticsReportsDataProviderTest {
 		ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
 
 		Assert.assertEquals(localDate, zonedDateTime.toLocalDate());
+	}
+
+	@Test
+	public void testGetPageReferringURLs() throws Exception {
+		AnalyticsReportsDataProvider analyticsReportsDataProvider =
+			new AnalyticsReportsDataProvider(
+				_getHttp(
+					Collections.singletonMap(
+						"/page-referrers",
+						JSONUtil.put(
+							"https://slickdeals.net/computer-deals", 6.0
+						).put(
+							"https://slickdeals.net/credit-card-offers/", 1.0
+						).put(
+							"https://www.tomshardware.com/news/toms-hardware-" +
+								"live-events-ces-2021",
+							3.0
+						).toString())));
+
+		List<ReferringURL> referringURLS =
+			analyticsReportsDataProvider.getPageReferringURLs(
+				RandomTestUtil.randomLong(), RandomTestUtil.randomString());
+
+		Assert.assertEquals(referringURLS.toString(), 3, referringURLS.size());
+		Assert.assertEquals(
+			String.valueOf(
+				new ReferringURL(
+					1, "https://slickdeals.net/credit-card-offers/")),
+			String.valueOf(referringURLS.get(0)));
+		Assert.assertEquals(
+			String.valueOf(
+				new ReferringURL(
+					3,
+					"https://www.tomshardware.com/news/toms-hardware-live-" +
+						"events-ces-2021")),
+			String.valueOf(referringURLS.get(1)));
+		Assert.assertEquals(
+			String.valueOf(
+				new ReferringURL(6, "https://slickdeals.net/computer-deals")),
+			String.valueOf(referringURLS.get(2)));
+	}
+
+	@Test
+	public void testGetReferringSocialMediaList() throws Exception {
+		AnalyticsReportsDataProvider analyticsReportsDataProvider =
+			new AnalyticsReportsDataProvider(
+				_getHttp(
+					Collections.singletonMap(
+						"/social-page-referrers",
+						JSONUtil.put(
+							"facebook", 6.0
+						).put(
+							"instagram", 3.0
+						).put(
+							"linkedin", 1.0
+						).toString())));
+
+		List<ReferringSocialMedia> referringSocialMediaList =
+			analyticsReportsDataProvider.getReferringSocialMediaList(
+				RandomTestUtil.randomLong(), RandomTestUtil.randomString());
+
+		Assert.assertEquals(
+			referringSocialMediaList.toString(), 3,
+			referringSocialMediaList.size());
+		Assert.assertEquals(
+			String.valueOf(new ReferringSocialMedia("facebook", 6)),
+			String.valueOf(referringSocialMediaList.get(0)));
+		Assert.assertEquals(
+			String.valueOf(new ReferringSocialMedia("instagram", 3)),
+			String.valueOf(referringSocialMediaList.get(1)));
+		Assert.assertEquals(
+			String.valueOf(new ReferringSocialMedia("linkedin", 1)),
+			String.valueOf(referringSocialMediaList.get(2)));
 	}
 
 	@Test
@@ -263,7 +370,15 @@ public class AnalyticsReportsDataProviderTest {
 							"organic", 3849L
 						).put(
 							"paid", 235L
+						).put(
+							"social", 389L
 						).toString()
+					).put(
+						"/page-referrer-hosts", "{}"
+					).put(
+						"/page-referrers", "{}"
+					).put(
+						"/social-page-referrers", "{}"
 					).put(
 						"/traffic-sources",
 						JSONUtil.putAll(
@@ -289,13 +404,16 @@ public class AnalyticsReportsDataProviderTest {
 				RandomTestUtil.randomLong(), RandomTestUtil.randomString());
 
 		Assert.assertEquals(
-			trafficChannels.toString(), 2, trafficChannels.size());
+			trafficChannels.toString(), 3, trafficChannels.size());
 		Assert.assertEquals(
-			String.valueOf(new OrganicTrafficChannelImpl(null, 3849L, 94.2D)),
+			String.valueOf(new OrganicTrafficChannelImpl(null, 3849L, 86.0D)),
 			String.valueOf(trafficChannels.get("organic")));
 		Assert.assertEquals(
-			String.valueOf(new PaidTrafficChannelImpl(null, 235L, 5.8D)),
+			String.valueOf(new PaidTrafficChannelImpl(null, 235L, 5.3D)),
 			String.valueOf(trafficChannels.get("paid")));
+		Assert.assertEquals(
+			String.valueOf(new SocialTrafficChannelImpl(null, 389L, 8.7D)),
+			String.valueOf(trafficChannels.get("social")));
 	}
 
 	@Test(expected = PortalException.class)
@@ -323,6 +441,12 @@ public class AnalyticsReportsDataProviderTest {
 						).put(
 							"paid", 206L
 						).toString()
+					).put(
+						"/page-referrer-hosts", "{}"
+					).put(
+						"/page-referrers", "{}"
+					).put(
+						"/social-page-referrers", "{}"
 					).put(
 						"/traffic-sources",
 						JSONUtil.putAll(
@@ -421,6 +545,64 @@ public class AnalyticsReportsDataProviderTest {
 									"dxp enterprises", 1, 4400, 206L)))),
 					206L, 6.06D)),
 			String.valueOf(trafficChannels.get("paid")));
+	}
+
+	@Test
+	public void testGetTrafficChannelsWithReferringSocialMedia()
+		throws Exception {
+
+		AnalyticsReportsDataProvider analyticsReportsDataProvider =
+			new AnalyticsReportsDataProvider(
+				_getHttp(
+					HashMapBuilder.put(
+						"/acquisition-channels",
+						JSONUtil.put(
+							"organic", 3849L
+						).put(
+							"paid", 235L
+						).put(
+							"social", 389L
+						).toString()
+					).put(
+						"/page-referrer-hosts", "{}"
+					).put(
+						"/page-referrers", "{}"
+					).put(
+						"/social-page-referrers",
+						JSONUtil.put(
+							"facebook", 389.0
+						).toString()
+					).put(
+						"/traffic-sources",
+						JSONUtil.putAll(
+							JSONUtil.put(
+								"name", "organic"
+							).put(
+								"trafficAmount", 7849L
+							).put(
+								"trafficShare", 97.25D
+							),
+							JSONUtil.put(
+								"name", "paid"
+							).put(
+								"trafficAmount", 135L
+							).put(
+								"trafficShare", 56.75D
+							)
+						).toString()
+					).build()));
+
+		Map<String, TrafficChannel> trafficChannels =
+			analyticsReportsDataProvider.getTrafficChannels(
+				RandomTestUtil.randomLong(), RandomTestUtil.randomString());
+
+		Assert.assertEquals(
+			String.valueOf(
+				new SocialTrafficChannelImpl(
+					Collections.singletonList(
+						new ReferringSocialMedia("facebook", 389)),
+					389L, 8.7D)),
+			String.valueOf(trafficChannels.get("social")));
 	}
 
 	@Test

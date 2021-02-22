@@ -63,6 +63,17 @@ renderResponse.setTitle((formInstance == null) ? LanguageUtil.get(request, "new-
 			</div>
 
 			<ul class="navbar-nav toolbar-group-field">
+				<li class="nav-item pr-3">
+					<clay:button
+						borderless="<%= true %>"
+						displayType="secondary"
+						icon="cog"
+						id='<%= liferayPortletResponse.getNamespace() + "ddmFormInstanceSettingsIcon" %>'
+						onClick="javascript:Liferay.DDM.openSettings()"
+						small="<%= true %>"
+						title='<%= LanguageUtil.get(request, "settings") %>'
+					/>
+				</li>
 				<li class="nav-item pr-2">
 					<c:choose>
 						<c:when test="<%= disableCopyButton %>">
@@ -133,11 +144,11 @@ renderResponse.setTitle((formInstance == null) ? LanguageUtil.get(request, "new-
 		<div class="ddm-form-basic-info">
 			<clay:container-fluid>
 				<h1>
-					<aui:input autoSize="<%= true %>" cssClass="ddm-form-name ddm-placeholder hidden" label="" name="nameEditor" placeholder='<%= LanguageUtil.get(request, "untitled-form") %>' type="textarea" value="<%= HtmlUtil.escapeAttribute(ddmFormAdminDisplayContext.getFormName()) %>" />
+					<aui:input autoSize="<%= true %>" cssClass="ddm-form-name ddm-placeholder hidden" label="" name="nameEditor" placeholder='<%= LanguageUtil.get(request, "untitled-form") %>' type="textarea" value="<%= HtmlUtil.toInputSafe(ddmFormAdminDisplayContext.getFormName()) %>" />
 				</h1>
 
 				<h5>
-					<aui:input autoSize="<%= true %>" cssClass="ddm-form-description ddm-placeholder hidden" label="" name="descriptionEditor" placeholder='<%= LanguageUtil.get(request, "add-a-short-description-for-this-form") %>' type="textarea" value="<%= HtmlUtil.escapeAttribute(ddmFormAdminDisplayContext.getFormDescription()) %>" />
+					<aui:input autoSize="<%= true %>" cssClass="ddm-form-description ddm-placeholder hidden" label="" name="descriptionEditor" placeholder='<%= LanguageUtil.get(request, "add-a-short-description-for-this-form") %>' type="textarea" value="<%= HtmlUtil.toInputSafe(ddmFormAdminDisplayContext.getFormDescription()) %>" />
 				</h5>
 			</clay:container-fluid>
 		</div>
@@ -149,7 +160,10 @@ renderResponse.setTitle((formInstance == null) ? LanguageUtil.get(request, "new-
 		cssClass="ddm-form-instance-settings hide"
 		id='<%= liferayPortletResponse.getNamespace() + "settings" %>'
 	>
-		<%= ddmFormAdminDisplayContext.serializeSettingsForm(pageContext) %>
+		<react:component
+			module="admin/js/index.es"
+			props="<%= ddmFormAdminDisplayContext.getDDMFormSettingsContext(pageContext) %>"
+		/>
 	</clay:container-fluid>
 </div>
 
@@ -197,7 +211,7 @@ renderResponse.setTitle((formInstance == null) ? LanguageUtil.get(request, "new-
 		start: function (initialPages) {
 			Liferay.Loader.require(
 				'<%= mainRequire %>',
-				function (packageName) {
+				(packageName) => {
 					var context = <%= serializedFormBuilderContext %>;
 
 					if (context.pages.length === 0 && initialPages) {
@@ -240,7 +254,7 @@ renderResponse.setTitle((formInstance == null) ? LanguageUtil.get(request, "new-
 						'#<portlet:namespace />-container'
 					);
 				},
-				function (error) {
+				(error) => {
 					throw error;
 				}
 			);
@@ -255,7 +269,7 @@ renderResponse.setTitle((formInstance == null) ? LanguageUtil.get(request, "new-
 				'<portlet:namespace />translationManager'
 			);
 
-			Liferay.destroyComponents(function (component) {
+			Liferay.destroyComponents((component) => {
 				var destroy = false;
 
 				if (component === translationManager) {
@@ -287,12 +301,12 @@ renderResponse.setTitle((formInstance == null) ? LanguageUtil.get(request, "new-
 		Liferay.Util.openWindow(
 			{
 				dialog: {
-					cssClass: 'ddm-form-settings-modal',
-					height: 700,
+					cssClass: 'ddm-form-settings-modal modal-full-screen',
+					height: 600,
 					resizable: false,
 					'toolbars.footer': [
 						{
-							cssClass: 'btn-link',
+							cssClass: 'btn-secondary mr-3',
 							label: '<liferay-ui:message key="cancel" />',
 							on: {
 								click: function () {
@@ -314,13 +328,13 @@ renderResponse.setTitle((formInstance == null) ? LanguageUtil.get(request, "new-
 							},
 						},
 					],
-					width: 720,
+					width: 600,
 				},
 				id: '<portlet:namespace />settingsModal',
 				stack: false,
-				title: '<liferay-ui:message key="form-settings" />',
+				title: '<liferay-ui:message key="settings" />',
 			},
-			function (dialogWindow) {
+			(dialogWindow) => {
 				var bodyNode = dialogWindow.bodyNode;
 
 				var settingsNode = A.one('#<portlet:namespace />settings');

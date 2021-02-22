@@ -53,10 +53,14 @@ import com.liferay.commerce.product.util.CPContentContributor;
 import com.liferay.commerce.product.util.CPContentContributorRegistry;
 import com.liferay.commerce.product.util.CPDefinitionHelper;
 import com.liferay.commerce.product.util.CPInstanceHelper;
+import com.liferay.commerce.wish.list.model.CommerceWishList;
+import com.liferay.commerce.wish.list.service.CommerceWishListItemService;
+import com.liferay.commerce.wish.list.service.CommerceWishListService;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
@@ -87,9 +91,21 @@ import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Alessio Antonio Rendina
+ * @author Ivica Cardic
  */
 @Component(enabled = false, immediate = true, service = CPContentHelper.class)
 public class CPContentHelperImpl implements CPContentHelper {
+
+	@Override
+	public JSONObject getAvailabilityContentContributorValueJSONObject(
+			CPCatalogEntry cpCatalogEntry,
+			HttpServletRequest httpServletRequest)
+		throws Exception {
+
+		return getCPContentContributorValueJSONObject(
+			CPContentContributorConstants.AVAILABILITY_NAME, cpCatalogEntry,
+			httpServletRequest);
+	}
 
 	@Override
 	public String getAvailabilityEstimateLabel(
@@ -97,7 +113,7 @@ public class CPContentHelperImpl implements CPContentHelper {
 		throws Exception {
 
 		JSONObject availabilityEstimateJSONObject =
-			(JSONObject)getCPContentContributorValue(
+			getCPContentContributorValueJSONObject(
 				CPContentContributorConstants.AVAILABILITY_ESTIMATE_NAME,
 				httpServletRequest);
 
@@ -114,7 +130,7 @@ public class CPContentHelperImpl implements CPContentHelper {
 		throws Exception {
 
 		JSONObject availabilityJSONObject =
-			(JSONObject)getCPContentContributorValue(
+			getCPContentContributorValueJSONObject(
 				CPContentContributorConstants.AVAILABILITY_NAME,
 				httpServletRequest);
 
@@ -207,8 +223,9 @@ public class CPContentHelperImpl implements CPContentHelper {
 	}
 
 	@Override
-	public Object getCPContentContributorValue(
-			String contributorKey, HttpServletRequest httpServletRequest)
+	public JSONObject getCPContentContributorValueJSONObject(
+			String contributorKey, CPCatalogEntry cpCatalogEntry,
+			HttpServletRequest httpServletRequest)
 		throws Exception {
 
 		CPContentContributor cpContentContributor =
@@ -220,7 +237,17 @@ public class CPContentHelperImpl implements CPContentHelper {
 		}
 
 		return cpContentContributor.getValue(
-			getDefaultCPInstance(httpServletRequest), httpServletRequest);
+			getDefaultCPInstance(cpCatalogEntry), httpServletRequest);
+	}
+
+	@Override
+	public JSONObject getCPContentContributorValueJSONObject(
+			String contributorKey, HttpServletRequest httpServletRequest)
+		throws Exception {
+
+		return getCPContentContributorValueJSONObject(
+			contributorKey, getCPCatalogEntry(httpServletRequest),
+			httpServletRequest);
 	}
 
 	@Override
@@ -280,22 +307,25 @@ public class CPContentHelperImpl implements CPContentHelper {
 	}
 
 	@Override
-	public CPInstance getDefaultCPInstance(
-			HttpServletRequest httpServletRequest)
+	public CPInstance getDefaultCPInstance(CPCatalogEntry cpCatalogEntry)
 		throws Exception {
 
-		CPCatalogEntry cpCatalogEntry = getCPCatalogEntry(httpServletRequest);
+		if ((cpCatalogEntry == null) ||
+			!cpCatalogEntry.isIgnoreSKUCombinations()) {
 
-		if (cpCatalogEntry == null) {
-			return null;
-		}
-
-		if (!cpCatalogEntry.isIgnoreSKUCombinations()) {
 			return null;
 		}
 
 		return _cpInstanceHelper.getDefaultCPInstance(
 			cpCatalogEntry.getCPDefinitionId());
+	}
+
+	@Override
+	public CPInstance getDefaultCPInstance(
+			HttpServletRequest httpServletRequest)
+		throws Exception {
+
+		return getDefaultCPInstance(getCPCatalogEntry(httpServletRequest));
 	}
 
 	@Override
@@ -373,11 +403,11 @@ public class CPContentHelperImpl implements CPContentHelper {
 	}
 
 	@Override
-	public String getStockQuantityLabel(HttpServletRequest httpServletRequest)
+	public String getStockQuantity(HttpServletRequest httpServletRequest)
 		throws Exception {
 
 		JSONObject stockQuantityJSONObject =
-			(JSONObject)getCPContentContributorValue(
+			getCPContentContributorValueJSONObject(
 				CPContentContributorConstants.STOCK_QUANTITY_NAME,
 				httpServletRequest);
 
@@ -390,12 +420,31 @@ public class CPContentHelperImpl implements CPContentHelper {
 	}
 
 	@Override
+	public String getStockQuantityLabel(HttpServletRequest httpServletRequest)
+		throws Exception {
+
+		JSONObject stockQuantityJSONObject =
+			getCPContentContributorValueJSONObject(
+				CPContentContributorConstants.STOCK_QUANTITY_NAME,
+				httpServletRequest);
+
+		if (stockQuantityJSONObject == null) {
+			return StringPool.BLANK;
+		}
+
+		return LanguageUtil.format(
+			httpServletRequest, "stock-quantity-x",
+			stockQuantityJSONObject.getString(
+				CPContentContributorConstants.STOCK_QUANTITY_NAME));
+	}
+
+	@Override
 	public String getSubscriptionInfoLabel(
 			HttpServletRequest httpServletRequest)
 		throws Exception {
 
 		JSONObject subscriptionInfoJSONObject =
-			(JSONObject)getCPContentContributorValue(
+			getCPContentContributorValueJSONObject(
 				CPContentContributorConstants.SUBSCRIPTION_INFO,
 				httpServletRequest);
 
@@ -446,6 +495,47 @@ public class CPContentHelperImpl implements CPContentHelper {
 						null);
 
 		return !cpDefinitionSpecificationOptionValues.isEmpty();
+	}
+
+	@Override
+	public boolean isInWishList(
+			CPSku cpSku, CPCatalogEntry cpCatalogEntry,
+			ThemeDisplay themeDisplay)
+		throws Exception {
+
+		CommerceWishList commerceWishList =
+			_commerceWishListService.getDefaultCommerceWishList(
+				themeDisplay.getScopeGroupId(), themeDisplay.getUserId());
+
+		if (commerceWishList != null) {
+			long commerceWishListId = commerceWishList.getCommerceWishListId();
+
+			if (cpSku != null) {
+				int itemByContainsCPInstanceCount =
+					_commerceWishListItemService.
+						getCommerceWishListItemByContainsCPInstanceCount(
+							commerceWishListId, cpSku.getCPInstanceUuid());
+
+				if (itemByContainsCPInstanceCount > 0) {
+					return true;
+				}
+
+				return false;
+			}
+
+			int itemByContainsCProductCount =
+				_commerceWishListItemService.
+					getCommerceWishListItemByContainsCProductCount(
+						commerceWishListId, cpCatalogEntry.getCProductId());
+
+			if (itemByContainsCProductCount > 0) {
+				return true;
+			}
+
+			return false;
+		}
+
+		return false;
 	}
 
 	@Override
@@ -554,6 +644,12 @@ public class CPContentHelperImpl implements CPContentHelper {
 
 	@Reference
 	private CommerceMediaResolver _commerceMediaResolver;
+
+	@Reference
+	private CommerceWishListItemService _commerceWishListItemService;
+
+	@Reference
+	private CommerceWishListService _commerceWishListService;
 
 	@Reference
 	private CPAttachmentFileEntryLocalService

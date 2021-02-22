@@ -61,6 +61,9 @@ public interface Build {
 
 	public Job.BuildProfile getBuildProfile();
 
+	public JSONObject getBuildResultsJSONObject(
+		String[] buildResults, String[] testStatuses, String[] dataTypes);
+
 	public String getBuildURL();
 
 	public String getBuildURLRegex();
@@ -162,9 +165,13 @@ public interface Build {
 
 	public Map<String, String> getStopPropertiesTempMap();
 
+	public TestClassResult getTestClassResult(String testClassName);
+
 	public List<TestClassResult> getTestClassResults();
 
 	public JSONObject getTestReportJSONObject(boolean checkCache);
+
+	public List<TestResult> getTestResults();
 
 	public List<TestResult> getTestResults(String testStatus);
 

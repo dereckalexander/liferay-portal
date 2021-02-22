@@ -132,31 +132,29 @@ public class DDMFormFieldDeserializerUtil {
 		JSONObject jsonObject = jsonFactory.createJSONObject(
 			serializedDDMFormFieldProperty);
 
-		ddmFormFieldValidation.setErrorMessageLocalizedValue(
-			_deserializeLocalizedValue(
-				jsonFactory, jsonObject.getString("errorMessage")));
+		DDMFormFieldValidationExpression ddmFormFieldValidationExpression =
+			new DDMFormFieldValidationExpression();
 
 		JSONObject expressionJSONObject = jsonObject.getJSONObject(
 			"expression");
 
 		if (expressionJSONObject != null) {
-			ddmFormFieldValidation.setDDMFormFieldValidationExpression(
-				new DDMFormFieldValidationExpression() {
-					{
-						setName(expressionJSONObject.getString("name"));
-						setValue(expressionJSONObject.getString("value"));
-					}
-				});
+			ddmFormFieldValidationExpression.setName(
+				expressionJSONObject.getString("name"));
+			ddmFormFieldValidationExpression.setValue(
+				expressionJSONObject.getString("value"));
 		}
 		else {
-			ddmFormFieldValidation.setDDMFormFieldValidationExpression(
-				new DDMFormFieldValidationExpression() {
-					{
-						setValue(jsonObject.getString("expression"));
-					}
-				});
+			ddmFormFieldValidationExpression.setValue(
+				jsonObject.getString("expression"));
 		}
 
+		ddmFormFieldValidation.setDDMFormFieldValidationExpression(
+			ddmFormFieldValidationExpression);
+
+		ddmFormFieldValidation.setErrorMessageLocalizedValue(
+			_deserializeLocalizedValue(
+				jsonFactory, jsonObject.getString("errorMessage")));
 		ddmFormFieldValidation.setParameterLocalizedValue(
 			_deserializeLocalizedValue(
 				jsonFactory, jsonObject.getString("parameter")));

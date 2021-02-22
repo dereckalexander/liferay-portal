@@ -19,8 +19,18 @@
 	<td></td>
 </tr>
 <tr>
+	<td>FIELD_ADD_REMOVE</td>
+	<td>//div[contains(@class,'ddm-field')]//button[contains(@class,'ddm-form-field-repeatable-delete-button')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>FIELD_ADD_SPECIFIC</td>
 	<td>//div[contains(@class,'lfr-ddm-form-container')]//div[contains(@data-field-name,'${key_fieldName}')][${key_repeatableFieldNumber}]//div[contains(@class,'lfr-ddm-form-field-repeatable-toolbar')]//button[contains(@class,'btn') and contains(@title,'Duplicate')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FIELD_REMOVE</td>
+	<td>xpath=(//div[contains(@class,'ddm-field')][contains(@data-field-name,'${key_fieldName}')][not(contains(@class,'container'))])[${key_index}]//button[contains(@class,'ddm-form-field-repeatable-delete-button')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -255,6 +265,11 @@
 <tr>
 	<td>TEXT_FIELD</td>
 	<td>//input[@type='text' and contains(@id,'${key_fieldName}')] | //input[@type='text' and contains(@name,'${key_fieldName}')] | //div[contains(@class,'form-group')]//p[text()='${key_fieldLabel}'] | //div[contains(@data-field-name,'${key_fieldName}')]//div[contains(@class,'form-group')]//input</td>
+	<td></td>
+</tr>
+<tr>
+	<td>TEXT_FIELD_NULL</td>
+	<td>//input[@type='text' and (@value='') and contains (@class,'form-control bg-light field')]</td>
 	<td></td>
 </tr>
 <tr>

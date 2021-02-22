@@ -24,6 +24,9 @@ import {EDITABLE_TYPES} from '../../config/constants/editableTypes';
 import {VIEWPORT_SIZES} from '../../config/constants/viewportSizes';
 import {config} from '../../config/index';
 import {useSelector} from '../../store/index';
+import isMapped from '../../utils/editable-value/isMapped';
+import isMappedToCollection from '../../utils/editable-value/isMappedToCollection';
+import isMappedToInfoItem from '../../utils/editable-value/isMappedToInfoItem';
 import {useId} from '../../utils/useId';
 
 const IMAGE_SOURCES = {
@@ -46,7 +49,7 @@ export const ImageSelectorField = ({field, onValueSelect, value = {}}) => {
 	);
 
 	const [imageSource, setImageSource] = useState(() =>
-		value.fieldId || value.mappedField
+		isMapped(value)
 			? IMAGE_SOURCES.mapping.value
 			: IMAGE_SOURCES.direct.value
 	);
@@ -91,17 +94,31 @@ export const ImageSelectorField = ({field, onValueSelect, value = {}}) => {
 
 					{config.adaptiveMediaEnabled && value?.fileEntryId && (
 						<ImageSelectorSize
-							fileEntryId={value.fileEntryId}
+							fieldValue={{fileEntryId: value.fileEntryId}}
 							imageSizeId="auto"
 						/>
 					)}
 				</>
 			) : (
-				<MappingSelector
-					fieldType={EDITABLE_TYPES.backgroundImage}
-					mappedItem={value}
-					onMappingSelect={handleImageChanged}
-				/>
+				<>
+					{selectedViewportSize === VIEWPORT_SIZES.desktop ? (
+						<MappingSelector
+							fieldType={EDITABLE_TYPES.backgroundImage}
+							mappedItem={value}
+							onMappingSelect={handleImageChanged}
+						/>
+					) : null}
+
+					{config.adaptiveMediaEnabled &&
+						(value?.fileEntryId ||
+							isMappedToInfoItem(value) ||
+							isMappedToCollection(value)) && (
+							<ImageSelectorSize
+								fieldValue={value}
+								imageSizeId="auto"
+							/>
+						)}
+				</>
 			)}
 		</>
 	);

@@ -84,8 +84,8 @@
 
 				<liferay-ui:search-container-column-text>
 					<clay:dropdown-actions
-						defaultEventHandler="<%= SiteAdminWebKeys.SITE_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
 						dropdownItems="<%= siteAdminDisplayContext.getActionDropdownItems(curGroup) %>"
+						propsTransformer="js/SiteDropdownDefaultPropsTransformer"
 					/>
 				</liferay-ui:search-container-column-text>
 			</c:when>
@@ -117,8 +117,11 @@
 					List<String> names = SitesUtil.getOrganizationNames(curGroup, user);
 
 					names.addAll(SitesUtil.getUserGroupNames(curGroup, user));
+					%>
 
-					if (ListUtil.isNotEmpty(names)) {
+					<c:if test="<%= ListUtil.isNotEmpty(names) %>">
+
+						<%
 						String message = StringPool.BLANK;
 
 						if (names.size() == 1) {
@@ -129,14 +132,10 @@
 
 							message = LanguageUtil.format(request, "you-are-a-member-of-x-because-you-belong-to-x-and-x", new Object[] {HtmlUtil.escape(curGroup.getDescriptiveName(locale)), HtmlUtil.escape(StringUtil.merge(namesList.toArray(new String[names.size() - 1]), ", ")), HtmlUtil.escape(names.get(names.size() - 1))}, false);
 						}
-					%>
+						%>
 
 						<liferay-ui:icon-help message="<%= message %>" />
-
-					<%
-					}
-					%>
-
+					</c:if>
 				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
@@ -216,9 +215,8 @@
 
 				<liferay-ui:search-container-column-text>
 					<clay:dropdown-actions
-						defaultEventHandler="<%= SiteAdminWebKeys.SITE_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
 						dropdownItems="<%= siteAdminDisplayContext.getActionDropdownItems(curGroup) %>"
-						itemsIconAlignment="right"
+						propsTransformer="js/SiteDropdownDefaultPropsTransformer"
 					/>
 				</liferay-ui:search-container-column-text>
 			</c:otherwise>
@@ -230,8 +228,3 @@
 		markupView="lexicon"
 	/>
 </liferay-ui:search-container>
-
-<liferay-frontend:component
-	componentId="<%= SiteAdminWebKeys.SITE_DROPDOWN_DEFAULT_EVENT_HANDLER %>"
-	module="js/SiteDropdownDefaultEventHandler.es"
-/>

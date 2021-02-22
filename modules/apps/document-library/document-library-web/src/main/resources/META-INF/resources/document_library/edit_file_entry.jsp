@@ -139,7 +139,9 @@ renderResponse.setTitle(headerTitle);
 	</liferay-frontend:info-bar>
 </c:if>
 
-<clay:container-fluid>
+<clay:container-fluid
+	cssClass="container-form-lg"
+>
 	<c:if test="<%= checkedOut %>">
 
 		<%
@@ -287,7 +289,7 @@ renderResponse.setTitle(headerTitle);
 								);
 
 								if (selectFolderButton) {
-									selectFolderButton.addEventListener('click', function (event) {
+									selectFolderButton.addEventListener('click', (event) => {
 										Liferay.Util.openSelectionModal({
 											id: '<portlet:namespace />selectFolder',
 											onSelect: function (selectedItem) {
@@ -364,13 +366,15 @@ renderResponse.setTitle(headerTitle);
 
 										<%
 										for (DLFileEntryType curDLFileEntryType : dlFileEntryTypes) {
-											if ((curDLFileEntryType.getFileEntryTypeId() == DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT) || (fileEntryTypeId == curDLFileEntryType.getFileEntryTypeId()) || DLFileEntryTypePermission.contains(permissionChecker, curDLFileEntryType, ActionKeys.VIEW)) {
 										%>
+
+											<c:if test="<%= (curDLFileEntryType.getFileEntryTypeId() == DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT) || (fileEntryTypeId == curDLFileEntryType.getFileEntryTypeId()) || DLFileEntryTypePermission.contains(permissionChecker, curDLFileEntryType, ActionKeys.VIEW) %>">
 
 											<aui:option label="<%= HtmlUtil.escape(curDLFileEntryType.getName(locale)) %>" selected="<%= fileEntryTypeId == curDLFileEntryType.getPrimaryKey() %>" value="<%= curDLFileEntryType.getPrimaryKey() %>" />
 
+											</c:if>
+
 										<%
-											}
 										}
 										%>
 
@@ -383,21 +387,55 @@ renderResponse.setTitle(headerTitle);
 
 							<aui:input name="defaultLanguageId" type="hidden" value="<%= defaultLanguageId %>" />
 
+							<c:if test="<%= fileEntryTypeId > 0 %>">
+
 							<%
-							if (fileEntryTypeId > 0) {
-								try {
-									boolean localizable = true;
+							List<DDMStructure> ddmStructures = dlFileEntryType.getDDMStructures();
 
-									for (DDMStructure ddmStructure : dlFileEntryType.getDDMStructures()) {
-										com.liferay.dynamic.data.mapping.storage.DDMFormValues ddmFormValues = null;
+							boolean showLanguageSelector = false;
 
-										try {
-											DLFileEntryMetadata fileEntryMetadata = DLFileEntryMetadataLocalServiceUtil.getFileEntryMetadata(ddmStructure.getStructureId(), fileVersionId);
+							for (DDMStructure ddmStructure : ddmStructures) {
+								if (dlEditFileEntryDisplayContext.isDDMStructureVisible(ddmStructure)) {
+									showLanguageSelector = true;
 
-											ddmFormValues = dlEditFileEntryDisplayContext.getDDMFormValues(fileEntryMetadata.getDDMStorageId());
-										}
-										catch (Exception e) {
-										}
+									break;
+								}
+							}
+							%>
+
+								<c:if test="<%= showLanguageSelector %>">
+									<div class="mb-3">
+										<react:component
+											module="document_library/js/LanguageSelector"
+											props='<%=
+												HashMapBuilder.<String, Object>put(
+													"ddmStructureIds", DDMStructureUtil.getDDMStructureIds(ddmStructures)
+												).put(
+													"languageIds", DDMStructureUtil.getAvailableLanguageIds(themeDisplay)
+												).put(
+													"selectedLanguageId", themeDisplay.getLanguageId()
+												).put(
+													"translatedLanguageIds", DDMStructureUtil.getTranslatedLanguageIds(ddmStructures, dlEditFileEntryDisplayContext, fileVersionId)
+												).build()
+											%>'
+										/>
+									</div>
+								</c:if>
+
+							<%
+							try {
+								boolean localizable = true;
+
+								for (DDMStructure ddmStructure : dlFileEntryType.getDDMStructures()) {
+									com.liferay.dynamic.data.mapping.storage.DDMFormValues ddmFormValues = null;
+
+									try {
+										DLFileEntryMetadata fileEntryMetadata = DLFileEntryMetadataLocalServiceUtil.getFileEntryMetadata(ddmStructure.getStructureId(), fileVersionId);
+
+										ddmFormValues = dlEditFileEntryDisplayContext.getDDMFormValues(fileEntryMetadata.getDDMStorageId());
+									}
+									catch (Exception e) {
+									}
 							%>
 
 										<c:if test="<%= !dlEditFileEntryDisplayContext.isDDMStructureVisible(ddmStructure) %>">
@@ -412,29 +450,23 @@ renderResponse.setTitle(headerTitle);
 											containerId='<%= liferayPortletResponse.getNamespace() + "dataEngineLayoutRenderer" + ddmStructure.getStructureId() %>'
 											dataDefinitionId="<%= ddmStructure.getStructureId() %>"
 											dataRecordValues="<%= ddmFormValuesToMapConverter.convert(ddmFormValues, DDMStructureLocalServiceUtil.getStructure(ddmStructure.getStructureId())) %>"
-											namespace="<%= liferayPortletResponse.getNamespace() + ddmStructure.getStructureId() %>"
-										/>
-
-										<liferay-frontend:component
-											componentId='<%= liferayPortletResponse.getNamespace() + "dataEngineLayoutRendererLanguageProxy" %>'
-											module="document_library/js/dataEngineLayoutRendererLanguageProxy.es"
-											servletContext="<%= application %>"
+											namespace="<%= liferayPortletResponse.getNamespace() + ddmStructure.getStructureId() + StringPool.UNDERLINE %>"
 										/>
 
 										<c:if test="<%= !dlEditFileEntryDisplayContext.isDDMStructureVisible(ddmStructure) %>">
 											</div>
 										</c:if>
 
-							<%
+								<%
 										localizable = false;
 									}
 								}
 								catch (Exception e) {
 									_log.error(e, e);
 								}
-							}
-							%>
+								%>
 
+							</c:if>
 						</c:if>
 					</c:if>
 				</aui:fieldset>
@@ -531,32 +563,32 @@ renderResponse.setTitle(headerTitle);
 						<liferay-ui:message key="there-is-a-publication-workflow-in-process" />
 					</div>
 				</c:if>
+
+				<div class="sheet-footer">
+					<c:if test="<%= dlEditFileEntryDisplayContext.isSaveButtonVisible() %>">
+						<aui:button disabled="<%= dlEditFileEntryDisplayContext.isSaveButtonDisabled() %>" name="saveButton" onClick='<%= liferayPortletResponse.getNamespace() + "saveFileEntry(true);" %>' value="<%= dlEditFileEntryDisplayContext.getSaveButtonLabel() %>" />
+					</c:if>
+
+					<c:if test="<%= dlEditFileEntryDisplayContext.isPublishButtonVisible() %>">
+						<aui:button disabled="<%= dlEditFileEntryDisplayContext.isPublishButtonDisabled() %>" name="publishButton" type="submit" value="<%= dlEditFileEntryDisplayContext.getPublishButtonLabel() %>" />
+					</c:if>
+
+					<c:if test="<%= dlEditFileEntryDisplayContext.isCheckoutDocumentButtonVisible() %>">
+						<aui:button disabled="<%= dlEditFileEntryDisplayContext.isCheckoutDocumentButtonDisabled() %>" onClick='<%= liferayPortletResponse.getNamespace() + "checkOut();" %>' value="checkout[document]" />
+					</c:if>
+
+					<c:if test="<%= dlEditFileEntryDisplayContext.isCheckinButtonVisible() %>">
+						<aui:button disabled="<%= dlEditFileEntryDisplayContext.isCheckinButtonDisabled() %>" onClick='<%= liferayPortletResponse.getNamespace() + "checkIn();" %>' value="save-and-checkin" />
+					</c:if>
+
+					<c:if test="<%= dlEditFileEntryDisplayContext.isCancelCheckoutDocumentButtonVisible() %>">
+						<aui:button disabled="<%= dlEditFileEntryDisplayContext.isCancelCheckoutDocumentButtonDisabled() %>" onClick='<%= liferayPortletResponse.getNamespace() + "cancelCheckOut();" %>' value="cancel-checkout[document]" />
+					</c:if>
+
+					<aui:button href="<%= redirect %>" type="cancel" />
+				</div>
 			</aui:fieldset-group>
 		</div>
-
-		<aui:button-row>
-			<c:if test="<%= dlEditFileEntryDisplayContext.isSaveButtonVisible() %>">
-				<aui:button disabled="<%= dlEditFileEntryDisplayContext.isSaveButtonDisabled() %>" name="saveButton" onClick='<%= liferayPortletResponse.getNamespace() + "saveFileEntry(true);" %>' value="<%= dlEditFileEntryDisplayContext.getSaveButtonLabel() %>" />
-			</c:if>
-
-			<c:if test="<%= dlEditFileEntryDisplayContext.isPublishButtonVisible() %>">
-				<aui:button disabled="<%= dlEditFileEntryDisplayContext.isPublishButtonDisabled() %>" name="publishButton" type="submit" value="<%= dlEditFileEntryDisplayContext.getPublishButtonLabel() %>" />
-			</c:if>
-
-			<c:if test="<%= dlEditFileEntryDisplayContext.isCheckoutDocumentButtonVisible() %>">
-				<aui:button disabled="<%= dlEditFileEntryDisplayContext.isCheckoutDocumentButtonDisabled() %>" onClick='<%= liferayPortletResponse.getNamespace() + "checkOut();" %>' value="checkout[document]" />
-			</c:if>
-
-			<c:if test="<%= dlEditFileEntryDisplayContext.isCheckinButtonVisible() %>">
-				<aui:button disabled="<%= dlEditFileEntryDisplayContext.isCheckinButtonDisabled() %>" onClick='<%= liferayPortletResponse.getNamespace() + "checkIn();" %>' value="save-and-checkin" />
-			</c:if>
-
-			<c:if test="<%= dlEditFileEntryDisplayContext.isCancelCheckoutDocumentButtonVisible() %>">
-				<aui:button disabled="<%= dlEditFileEntryDisplayContext.isCancelCheckoutDocumentButtonDisabled() %>" onClick='<%= liferayPortletResponse.getNamespace() + "cancelCheckOut();" %>' value="cancel-checkout[document]" />
-			</c:if>
-
-			<aui:button href="<%= redirect %>" type="cancel" />
-		</aui:button-row>
 	</aui:form>
 
 	<liferay-ui:upload-progress
@@ -638,8 +670,8 @@ renderResponse.setTitle(headerTitle);
 	function <portlet:namespace />showVersionDetailsDialog() {
 		Liferay.componentReady(
 			'<portlet:namespace />DocumentLibraryCheckinModal'
-		).then(function (documentLibraryCheckinModal) {
-			documentLibraryCheckinModal.open(function (versionIncrease, changeLog) {
+		).then((documentLibraryCheckinModal) => {
+			documentLibraryCheckinModal.open((versionIncrease, changeLog) => {
 				Liferay.Util.postForm(form, {
 					data: {
 						changeLog: changeLog,
@@ -686,7 +718,7 @@ renderResponse.setTitle(headerTitle);
 		);
 
 		if (updateVersionDetailsElement && versionDetailsElement) {
-			updateVersionDetailsElement.addEventListener('click', function (event) {
+			updateVersionDetailsElement.addEventListener('click', (event) => {
 				versionDetailsElement.classList.toggle('hide');
 			});
 		}

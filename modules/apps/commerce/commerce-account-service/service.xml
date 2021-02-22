@@ -55,7 +55,7 @@
 
 		<!-- References -->
 
-		<reference entity="Group" package-path="com.liferay.portal" />
+		<reference entity="AccountEntry" package-path="com.liferay.account" />
 		<reference entity="Organization" package-path="com.liferay.portal" />
 		<reference entity="Role" package-path="com.liferay.portal" />
 		<reference entity="UserGroupRole" package-path="com.liferay.portal" />
@@ -207,6 +207,10 @@
 		<finder name="OrganizationId" return-type="Collection">
 			<finder-column name="organizationId" />
 		</finder>
+
+		<!-- References -->
+
+		<reference entity="AccountEntryOrganizationRel" package-path="com.liferay.account" />
 	</entity>
 	<entity local-service="true" name="CommerceAccountUserRel" remote-service="true">
 
@@ -240,6 +244,7 @@
 
 		<!-- References -->
 
+		<reference entity="AccountEntryUserRel" package-path="com.liferay.account" />
 		<reference entity="Role" package-path="com.liferay.portal" />
 		<reference entity="UserGroupRole" package-path="com.liferay.portal" />
 	</entity>

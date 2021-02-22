@@ -106,7 +106,7 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 								<aui:script require="commerce-frontend-js/utilities/eventsDefinitions as events">
 									document
 										.querySelector('#erc-edit-modal-opener')
-										.addEventListener('click', function (e) {
+										.addEventListener('click', (e) => {
 											e.preventDefault();
 											Liferay.fire(events.OPEN_MODAL, {id: 'erc-edit-modal'});
 										});
@@ -159,11 +159,11 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 						<div class="dropdown-menu dropdown-menu-right" id="<portlet:namespace />commerce-dropdown-assigned-to">
 							<c:if test="<%= !assignedToCurrentUser %>">
 								<clay:button
-									elementClasses="dropdown-item transition-link"
+									cssClass="dropdown-item transition-link"
+									displayType="secondary"
 									id='<%= liferayPortletResponse.getNamespace() + "assign-to-me-modal-opener" %>'
 									label='<%= LanguageUtil.get(request, "assign-to-me") %>'
-									size="lg"
-									style="secondary"
+									small="<%= false %>"
 								/>
 
 								<liferay-portlet:renderURL portletName="<%= PortletKeys.MY_WORKFLOW_TASK %>" var="assignToMeURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
@@ -176,7 +176,7 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 								<aui:script>
 									document
 										.querySelector('#<portlet:namespace />assign-to-me-modal-opener')
-										.addEventListener('click', function (e) {
+										.addEventListener('click', (e) => {
 											Liferay.Util.openWindow({
 												dialog: {
 													destroyOnHide: true,
@@ -196,11 +196,11 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 							</c:if>
 
 							<clay:button
-								elementClasses="dropdown-item transition-link"
+								cssClass="dropdown-item transition-link"
+								displayType="secondary"
 								id='<%= liferayPortletResponse.getNamespace() + "assign-to-modal-opener" %>'
 								label='<%= LanguageUtil.get(request, "assign-to-...") %>'
-								size="lg"
-								style="secondary"
+								small="<%= false %>"
 							/>
 
 							<liferay-portlet:renderURL portletName="<%= PortletKeys.MY_WORKFLOW_TASK %>" var="assignToURL" windowState="<%= LiferayWindowState.POP_UP.toString() %>">
@@ -212,7 +212,7 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 							<aui:script>
 								document
 									.querySelector('#<portlet:namespace />assign-to-modal-opener')
-									.addEventListener('click', function (e) {
+									.addEventListener('click', (e) => {
 										Liferay.Util.openWindow({
 											dialog: {
 												destroyOnHide: true,
@@ -233,7 +233,7 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 									window.location.reload();
 								}
 
-								Liferay.provide(window, '<portlet:namespace />toggleDropdown', function () {
+								Liferay.provide(window, '<portlet:namespace />toggleDropdown', () => {
 									var dropdownElement = window.document.querySelector(
 										'#<portlet:namespace />commerce-dropdown-assigned-to'
 									);
@@ -257,49 +257,41 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 
 						<%
 						for (HeaderActionModel action : actions) {
-							String buttonClasses = "btn c-mb-1 c-mb-sm-0 ";
+							String buttonCssClasses = "btn c-mb-1 c-mb-sm-0 ";
 
 							if (Validator.isNotNull(action.getAdditionalClasses())) {
-								buttonClasses += action.getAdditionalClasses();
+								buttonCssClasses += action.getAdditionalClasses();
 							}
 							else {
-								buttonClasses += "btn-secondary";
+								buttonCssClasses += "btn-secondary";
 							}
 
 							boolean submitCheck = Validator.isNull(action.getId());
 
-							String actionId = Validator.isNotNull(action.getId()) ? action.getId() : "header-action" + StringPool.UNDERLINE + PortalUtil.generateRandomKey(request, "taglib_step_tracker");
+							String actionId = Validator.isNotNull(action.getId()) ? action.getId() : "header-action_" + PortalUtil.generateRandomKey(request, "taglib_step_tracker");
 						%>
 
 							<clay:link
-								elementClasses="<%= buttonClasses %>"
+								cssClass="<%= buttonCssClasses %>"
 								href="<%= Validator.isNotNull(action.getHref()) ? action.getHref() : StringPool.POUND %>"
 								id="<%= actionId %>"
 								label="<%= LanguageUtil.get(request, action.getLabel()) %>"
 							/>
 
-							<%
-							if (submitCheck && Validator.isNotNull(action.getFormId())) {
-							%>
-
+							<c:if test="<%= submitCheck && Validator.isNotNull(action.getFormId()) %>">
 								<aui:script>
-									document
-										.getElementById('<%= actionId %>')
-										.addEventListener('click', function (e) {
-											e.preventDefault();
-											var form = document.getElementById('<%= action.getFormId() %>');
-											if (!form) {
-												throw new Error(
-													'Form with id: ' + <%= action.getFormId() %> + ' not found!'
-												);
-											}
-											submitForm(form);
-										});
+									document.getElementById('<%= actionId %>').addEventListener('click', (e) => {
+										e.preventDefault();
+										var form = document.getElementById('<%= action.getFormId() %>');
+										if (!form) {
+											throw new Error(
+												'Form with id: ' + <%= action.getFormId() %> + ' not found!'
+											);
+										}
+										submitForm(form);
+									});
 								</aui:script>
-
-							<%
-							}
-							%>
+							</c:if>
 
 						<%
 						}
@@ -328,7 +320,7 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 
 					<c:if test="<%= Validator.isNotNull(previewUrl) %>">
 						<clay:link
-							elementClasses="btn btn-outline-borderless btn-outline-secondary btn-sm text-primary"
+							cssClass="btn btn-outline-borderless btn-outline-secondary btn-sm text-primary"
 							href="<%= previewUrl %>"
 							icon="shortcut"
 						/>
@@ -359,7 +351,7 @@ String myWorkflowTasksPortletNamespace = PortalUtil.getPortletNamespace(PortletK
 		updateMenuDistanceFromTop();
 		window.addEventListener('resize', debouncedUpdateMenuDistanceFromTop);
 
-		Liferay.once('beforeNavigate', function () {
+		Liferay.once('beforeNavigate', () => {
 			window.removeEventListener(
 				'resize',
 				debouncedUpdateMenuDistanceFromTop

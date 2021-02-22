@@ -14,7 +14,7 @@
 
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
-import {ReactFieldBase} from 'dynamic-data-mapping-form-field-type';
+import {FieldBase} from 'dynamic-data-mapping-form-field-type/FieldBase/ReactFieldBase.es';
 import {openSelectionModal} from 'frontend-js-web';
 import React, {useEffect, useState} from 'react';
 
@@ -35,6 +35,7 @@ function getInputValue(value, predefinedValue) {
 
 const LayoutSelector = ({
 	disabled,
+	editingLanguageId,
 	inputValue,
 	itemSelectorURL,
 	name,
@@ -82,7 +83,9 @@ const LayoutSelector = ({
 
 					<ClayInput
 						className="bg-light"
+						dir={Liferay.Language.direction[editingLanguageId]}
 						disabled={disabled}
+						lang={editingLanguageId}
 						onClick={handleItemSelectorTriggerClick}
 						readOnly
 						type="text"
@@ -119,6 +122,7 @@ const LayoutSelector = ({
 };
 
 const Main = ({
+	editingLanguageId,
 	itemSelectorURL,
 	name,
 	onChange,
@@ -128,16 +132,17 @@ const Main = ({
 	value,
 	...otherProps
 }) => (
-	<ReactFieldBase {...otherProps} name={name} readOnly={readOnly}>
+	<FieldBase {...otherProps} name={name} readOnly={readOnly}>
 		<LayoutSelector
 			disabled={readOnly}
+			editingLanguageId={editingLanguageId}
 			inputValue={getInputValue(value, predefinedValue)}
 			itemSelectorURL={itemSelectorURL}
 			name={name}
 			onChange={(value) => onChange({}, value)}
 			portletNamespace={portletNamespace}
 		/>
-	</ReactFieldBase>
+	</FieldBase>
 );
 
 Main.displayName = 'LayoutSelector';

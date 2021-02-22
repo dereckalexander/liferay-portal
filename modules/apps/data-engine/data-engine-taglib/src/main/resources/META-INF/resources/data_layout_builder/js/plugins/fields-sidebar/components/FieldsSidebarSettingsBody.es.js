@@ -99,7 +99,7 @@ export default function ({
 	hasFocusedCustomObjectField,
 }) {
 	const [activePage, setActivePage] = useState(0);
-	const [dataLayoutBuilder] = useContext(DataLayoutBuilderContext);
+	const [dataLayoutBuilder] = useContext(DataLayoutBuilderContext) ?? [];
 	const spritemap = useContext(ClayIconSpriteContext);
 
 	const Column = useMemo(
@@ -142,7 +142,6 @@ export default function ({
 						case EVENT_TYPES.FIELD_CHANGE:
 							dispatchEvent(type, {
 								editingLanguageId:
-									editingLanguageId ||
 									settingsContext.editingLanguageId,
 								propertyName: payload.fieldInstance.fieldName,
 								propertyValue: payload.value,
@@ -165,6 +164,7 @@ export default function ({
 					activePage,
 					builderRules: dataRules,
 					defaultLanguageId,
+					displayable: true,
 					editable: true,
 					editingLanguageId,
 					spritemap,

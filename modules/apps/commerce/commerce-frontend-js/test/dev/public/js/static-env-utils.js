@@ -28,7 +28,7 @@ const Liferay = {
 		getLanguageId: () => 'it_IT',
 		getPathThemeImages: () => '/assets',
 		getPortalURL: () => window.location.origin,
-		getScopeGroupId: () => 111111,
+		getScopeGroupId: () => '123',
 	},
 	Util: {
 		sub: (key, ...values) => {
@@ -55,14 +55,25 @@ const Liferay = {
 	on: (name, fn) => {
 		window.addEventListener(name, fn);
 	},
-	staticEnvHeaders: new Headers({
-		Accept: 'application/json',
-		Authorization: `Basic ${window.btoa('test@liferay.com:test')}`,
-		'Content-Type': 'application/json',
-	}),
 	staticEnvTestUtils: {
 		print: (message, type) => ({message, type}),
 	},
+};
+
+window.defaultFetch = fetch;
+
+window.fetch = (resource, {headers, ...init}) => {
+	headers = new Headers({
+		Accept: 'application/json',
+		Authorization: `Basic ${window.btoa('test@liferay.com:test')}`,
+		'Content-Type': 'application/json',
+	});
+
+	// eslint-disable-next-line @liferay/portal/no-global-fetch
+	return window.defaultFetch(resource, {
+		...init,
+		headers,
+	});
 };
 
 window.Liferay = Liferay;

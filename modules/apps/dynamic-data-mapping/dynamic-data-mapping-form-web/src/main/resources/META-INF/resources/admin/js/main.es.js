@@ -13,13 +13,17 @@
  */
 
 import ClayModal from 'clay-modal';
-import {FormsRuleBuilder} from 'data-engine-taglib';
+import {
+	FormsRuleBuilder,
+	ReactMultiPanelSidebarAdapter,
+} from 'data-engine-taglib';
 import {FormBuilderBase} from 'dynamic-data-mapping-form-builder/js/components/FormBuilder/FormBuilder.es';
 import withEditablePageHeader from 'dynamic-data-mapping-form-builder/js/components/FormBuilder/withEditablePageHeader.es';
 import withMoveableFields from 'dynamic-data-mapping-form-builder/js/components/FormBuilder/withMoveableFields.es';
 import withMultiplePages from 'dynamic-data-mapping-form-builder/js/components/FormBuilder/withMultiplePages.es';
 import withResizeableColumns from 'dynamic-data-mapping-form-builder/js/components/FormBuilder/withResizeableColumns.es';
 import LayoutProvider from 'dynamic-data-mapping-form-builder/js/components/LayoutProvider/LayoutProvider.es';
+import RulesSupport from 'dynamic-data-mapping-form-builder/js/components/RuleBuilder/RulesSupport.es';
 import Sidebar from 'dynamic-data-mapping-form-builder/js/components/Sidebar/Sidebar.es';
 import {pageStructure} from 'dynamic-data-mapping-form-builder/js/util/config.es';
 import {
@@ -28,8 +32,7 @@ import {
 } from 'dynamic-data-mapping-form-builder/js/util/dom.es';
 import {sub} from 'dynamic-data-mapping-form-builder/js/util/strings.es';
 import {PagesVisitor, compose} from 'dynamic-data-mapping-form-renderer';
-import {delegate} from 'frontend-js-web';
-import {EventHandler} from 'metal-events';
+import {EventHandler, delegate} from 'frontend-js-web';
 import Component from 'metal-jsx';
 import {Config} from 'metal-state';
 
@@ -454,7 +457,9 @@ class Form extends Component {
 	}
 
 	openSidebar() {
-		this.refs.sidebar.open();
+		if (!this.props.context.dataEngineSidebar) {
+			this.refs.sidebar.open();
+		}
 	}
 
 	preventCopyAndPaste(event, limit) {
@@ -505,7 +510,9 @@ class Form extends Component {
 			spritemap,
 			view,
 		} = this.props;
-		const {saveButtonLabel} = this.state;
+		const {pages, saveButtonLabel, sidebarOpen} = this.state;
+
+		const {dataEngineSidebar, sidebarPanels} = context;
 
 		const storeProps = {
 			...this.props,
@@ -516,6 +523,12 @@ class Form extends Component {
 			initialSuccessPageSettings: context.successPageSettings,
 			ref: 'store',
 		};
+
+		const state = this._stateSyncronizer?.getState();
+
+		const formattedRules = state
+			? RulesSupport.formatRules(state.pages, rules)
+			: rules;
 
 		const LayoutProviderTag = LayoutProvider;
 
@@ -535,39 +548,63 @@ class Form extends Component {
 							portletNamespace={namespace}
 							ref="ruleBuilder"
 							rolesURL={rolesURL}
-							rules={rules}
+							rules={formattedRules}
 							spritemap={spritemap}
 							visible={this.isShowRuleBuilder()}
 						/>
 					)}
 
 					<ComposedFormBuilder
+						dataEngineSidebar={dataEngineSidebar}
 						fieldSets={fieldSets}
 						fieldTypes={fieldTypes}
 						groupId={groupId}
 						portletNamespace={namespace}
 						ref="formBuilder"
-						rules={rules}
+						rules={formattedRules}
+						sidebarOpen={sidebarOpen}
 						spritemap={spritemap}
 						view={view}
 						visible={
 							!this.isShowRuleBuilder() && !this.isShowReport()
 						}
 					/>
-
-					<Sidebar
-						defaultLanguageId={defaultLanguageId}
-						editingLanguageId={editingLanguageId}
-						fieldSetDefinitionURL={fieldSetDefinitionURL}
-						fieldSets={fieldSets}
-						fieldTypes={fieldTypes}
-						portletNamespace={namespace}
-						ref="sidebar"
-						spritemap={spritemap}
-						visible={
-							!this.isShowRuleBuilder() && !this.isShowReport()
-						}
-					/>
+					{dataEngineSidebar ? (
+						<ReactMultiPanelSidebarAdapter
+							dataProviderInstanceParameterSettingsURL={
+								dataProviderInstanceParameterSettingsURL
+							}
+							dataProviderInstancesURL={dataProviderInstancesURL}
+							defaultLanguageId={defaultLanguageId}
+							editingLanguageId={editingLanguageId}
+							fieldTypes={fieldTypes}
+							functionsMetadata={functionsMetadata}
+							functionsURL={functionsURL}
+							onChange={(sidebarOpen) =>
+								this.setState({sidebarOpen})
+							}
+							pages={pages}
+							panels={[['fields']]}
+							rules={rules}
+							sidebarPanels={sidebarPanels}
+							sidebarVariant="light"
+						/>
+					) : (
+						<Sidebar
+							defaultLanguageId={defaultLanguageId}
+							editingLanguageId={editingLanguageId}
+							fieldSetDefinitionURL={fieldSetDefinitionURL}
+							fieldSets={fieldSets}
+							fieldTypes={fieldTypes}
+							portletNamespace={namespace}
+							ref="sidebar"
+							spritemap={spritemap}
+							visible={
+								!this.isShowRuleBuilder() &&
+								!this.isShowReport()
+							}
+						/>
+					)}
 				</LayoutProviderTag>
 
 				<div class="container container-fluid-1280">
@@ -1066,12 +1103,15 @@ class Form extends Component {
 	_toggleFormBuilder(show) {
 		const {namespace} = this.props;
 
-		const managementToolbar = document.querySelector(
-			`#${namespace}managementToolbar`
+		const ddmFormInstanceSettingsIcon = document.querySelector(
+			`#${namespace}ddmFormInstanceSettingsIcon`
 		);
 		const formBasicInfo = document.querySelector('.ddm-form-basic-info');
 		const formBuilderButtons = document.querySelectorAll(
 			'.toolbar-group-field .nav-item .lfr-ddm-button'
+		);
+		const managementToolbar = document.querySelector(
+			`#${namespace}managementToolbar`
 		);
 		const publishIcon = document.querySelector('.publish-icon');
 		const translationManager = document.querySelector(
@@ -1084,12 +1124,17 @@ class Form extends Component {
 				NAV_ITEMS.FORM
 			);
 
-			managementToolbar.classList.remove('hide');
+			if (ddmFormInstanceSettingsIcon) {
+				ddmFormInstanceSettingsIcon.classList.remove('hide');
+			}
+
 			formBasicInfo.classList.remove('hide');
 
 			formBuilderButtons.forEach((formBuilderButton) => {
 				formBuilderButton.classList.remove('hide');
 			});
+
+			managementToolbar.classList.remove('hide');
 
 			if (publishIcon) {
 				publishIcon.classList.remove('hide');
@@ -1102,12 +1147,17 @@ class Form extends Component {
 			this.showAddButton();
 		}
 		else {
-			managementToolbar.classList.add('hide');
+			if (ddmFormInstanceSettingsIcon) {
+				ddmFormInstanceSettingsIcon.classList.add('hide');
+			}
+
 			formBasicInfo.classList.add('hide');
 
 			formBuilderButtons.forEach((formBuilderButton) => {
 				formBuilderButton.classList.add('hide');
 			});
+
+			managementToolbar.classList.add('hide');
 
 			if (publishIcon) {
 				publishIcon.classList.add('hide');
@@ -1221,6 +1271,7 @@ Form.PROPS = {
 	 */
 
 	context: Config.shapeOf({
+		dataEngineSidebar: Config.bool(),
 		pages: Config.arrayOf(Config.object()),
 		paginationMode: Config.string(),
 		rules: Config.array(),
@@ -1483,6 +1534,15 @@ Form.STATE = {
 	 */
 
 	saveButtonLabel: Config.string().valueFn('_saveButtonLabelValueFn'),
+
+	/**
+	 * @default true
+	 * @instance
+	 * @memberof Form
+	 * @type {!bool}
+	 */
+
+	sidebarOpen: Config.bool().value(true),
 };
 
 export default Form;

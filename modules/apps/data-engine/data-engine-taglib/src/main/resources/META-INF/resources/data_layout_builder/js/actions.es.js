@@ -12,6 +12,7 @@
  * details.
  */
 
+import {getDefaultDataLayout} from './utils/dataConverter.es';
 import {getDataDefinitionField} from './utils/dataDefinition.es';
 import {normalizeDataLayoutRows} from './utils/normalizers.es';
 
@@ -109,7 +110,6 @@ export const dropFieldSet = ({
 	availableLanguageIds = [],
 	dataLayoutBuilder,
 	defaultLanguageId,
-	fieldName,
 	fieldSet,
 	indexes,
 	parentFieldName,
@@ -117,8 +117,7 @@ export const dropFieldSet = ({
 	...otherProps
 }) => {
 	const dataLayoutPages = (
-		fieldSet.defaultDataLayout ||
-		dataLayoutBuilder.getDefaultDataLayout(fieldSet)
+		fieldSet.defaultDataLayout || getDefaultDataLayout(fieldSet)
 	).dataLayoutPages;
 
 	if (!availableLanguageIds.includes(defaultLanguageId)) {
@@ -128,9 +127,9 @@ export const dropFieldSet = ({
 	return {
 		...otherProps,
 		defaultLanguageId: fieldSet.defaultLanguageId,
-		fieldName,
-		fieldSet: dataLayoutBuilder.getFieldSetDDMForm(fieldSet, {
+		fieldSet: dataLayoutBuilder.getFieldSetDDMForm({
 			availableLanguageIds,
+			fieldSet,
 		}),
 		indexes,
 		parentFieldName,

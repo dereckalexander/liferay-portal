@@ -15,17 +15,27 @@
 package com.liferay.dynamic.data.mapping.util;
 
 import com.liferay.dynamic.data.mapping.model.DDMForm;
-
-import java.util.Locale;
+import com.liferay.dynamic.data.mapping.model.DDMFormLayout;
 
 /**
  * @author Eudaldo Alonso
  */
 public interface DDMDataDefinitionConverter {
 
-	public String convert(DDMForm ddmForm, Locale defaultLocale);
+	public DDMForm convertDDMFormDataDefinition(
+		DDMForm ddmForm, long parentStructureId, long parentStructureLayoutId);
 
-	public String convert(String dataDefinition, Locale defaultLocale)
+	public String convertDDMFormDataDefinition(
+			String dataDefinition, long parentStructureId,
+			long parentStructureLayoutId)
+		throws Exception;
+
+	public DDMFormLayout convertDDMFormLayoutDataDefinition(
+		DDMForm ddmForm, DDMFormLayout ddmFormLayout);
+
+	public String convertDDMFormLayoutDataDefinition(
+			String structureLayoutDataDefinition,
+			String structureVersionDataDefinition)
 		throws Exception;
 
 }

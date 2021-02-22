@@ -26,14 +26,18 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.taglib.util.TagResourceBundleUtil;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+
+import javax.portlet.PortletResponse;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
@@ -66,9 +70,6 @@ public class ManagementToolbarTag extends BaseContainerTag {
 
 			setShowResultsBar(true);
 		}
-
-		setShowCreationMenu(
-			ManagementToolbarDefaults.isShowCreationMenu(getCreationMenu()));
 
 		return super.doStartTag();
 	}
@@ -169,10 +170,19 @@ public class ManagementToolbarTag extends BaseContainerTag {
 	}
 
 	public String getNamespace() {
-		if ((_namespace == null) &&
-			(_managementToolbarDisplayContext != null)) {
+		if (_namespace != null) {
+			return _namespace;
+		}
 
+		if (_managementToolbarDisplayContext != null) {
 			return _managementToolbarDisplayContext.getNamespace();
+		}
+
+		PortletResponse portletResponse = (PortletResponse)request.getAttribute(
+			JavaConstants.JAVAX_PORTLET_RESPONSE);
+
+		if (portletResponse != null) {
+			_namespace = portletResponse.getNamespace();
 		}
 
 		return _namespace;
@@ -313,10 +323,13 @@ public class ManagementToolbarTag extends BaseContainerTag {
 	}
 
 	public Boolean isShowCreationMenu() {
-		if ((_showCreationMenu == null) &&
-			(_managementToolbarDisplayContext != null)) {
+		if (_showCreationMenu == null) {
+			if (_managementToolbarDisplayContext != null) {
+				return _managementToolbarDisplayContext.isShowCreationMenu();
+			}
 
-			return _managementToolbarDisplayContext.isShowCreationMenu();
+			return ManagementToolbarDefaults.isShowCreationMenu(
+				getCreationMenu());
 		}
 
 		return _showCreationMenu;
@@ -756,7 +769,13 @@ public class ManagementToolbarTag extends BaseContainerTag {
 		if (!active && (getFilterDropdownItems() != null)) {
 			jspWriter.write("<li class=\"nav-item\"><div class=\"dropdown\">");
 			jspWriter.write("<button class=\"btn btn-unstyled dropdown-toggle");
-			jspWriter.write(" nav-link\" type=\"button\"><span class=\"");
+			jspWriter.write(" nav-link\"");
+
+			if (disabled) {
+				jspWriter.write(" disabled");
+			}
+
+			jspWriter.write(" type=\"button\"><span class=\"");
 			jspWriter.write("navbar-breakpoint-down-d-none\"><span class=\"");
 			jspWriter.write("navbar-text-truncate\">");
 			jspWriter.write(
@@ -1049,8 +1068,8 @@ public class ManagementToolbarTag extends BaseContainerTag {
 		return SKIP_BODY;
 	}
 
-	private Map<String, String> _getParamsMap(String url) {
-		Map<String, String> searchData = new HashMap<>();
+	private Map<String, List<String>> _getParamsMap(String url) {
+		Map<String, List<String>> searchData = new HashMap<>();
 
 		String[] parameters = StringUtil.split(
 			HttpUtil.getQueryString(url), CharPool.AMPERSAND);
@@ -1077,7 +1096,15 @@ public class ManagementToolbarTag extends BaseContainerTag {
 
 			parameterValue = HttpUtil.decodeURL(parameterValue);
 
-			searchData.put(parameterName, parameterValue);
+			List<String> parameterValues = searchData.get(parameterName);
+
+			if (parameterValues == null) {
+				parameterValues = new LinkedList<>();
+
+				searchData.put(parameterName, parameterValues);
+			}
+
+			parameterValues.add(parameterValue);
 		}
 
 		return searchData;

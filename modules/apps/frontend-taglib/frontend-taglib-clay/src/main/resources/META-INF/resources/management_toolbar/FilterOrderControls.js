@@ -15,17 +15,37 @@
 import ClayButton from '@clayui/button';
 import {ClayDropDownWithItems} from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
-import ClayLink from '@clayui/link';
 import ClayManagementToolbar from '@clayui/management-toolbar';
 import React from 'react';
 
-const FilterOrderControls = ({disabled, filterDropdownItems, sortingURL}) => {
+import LinkOrButton from './LinkOrButton';
+
+const FilterOrderControls = ({
+	disabled,
+	filterDropdownItems,
+	onFilterDropdownItemClick,
+	sortingURL,
+}) => {
 	return (
 		<>
 			{filterDropdownItems && (
 				<ClayManagementToolbar.Item>
 					<ClayDropDownWithItems
-						items={filterDropdownItems}
+						items={filterDropdownItems.map((item) => {
+							return {
+								...item,
+								items: item.items.map((childItem) => {
+									return {
+										...childItem,
+										onClick(event) {
+											onFilterDropdownItemClick(event, {
+												item: childItem,
+											});
+										},
+									};
+								}),
+							};
+						})}
 						trigger={
 							<ClayButton
 								className="nav-link"
@@ -56,14 +76,14 @@ const FilterOrderControls = ({disabled, filterDropdownItems, sortingURL}) => {
 
 			{sortingURL && (
 				<ClayManagementToolbar.Item>
-					<ClayLink
+					<LinkOrButton
 						className="nav-link nav-link-monospaced"
+						disabled={disabled}
 						displayType="unstyled"
 						href={sortingURL}
+						symbol="order-arrow"
 						title={Liferay.Language.get('reverse-sort-direction')}
-					>
-						<ClayIcon symbol={'order-arrow'} />
-					</ClayLink>
+					/>
 				</ClayManagementToolbar.Item>
 			)}
 		</>

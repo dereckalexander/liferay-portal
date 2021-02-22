@@ -29,7 +29,7 @@ import {config} from '../config/index';
 import selectAvailablePanels from '../selectors/selectAvailablePanels';
 import selectAvailableSidebarPanels from '../selectors/selectAvailableSidebarPanels';
 import {useDispatch, useSelector} from '../store/index';
-import {useDropClear} from '../utils/dragAndDrop/useDragAndDrop';
+import {useDropClear} from '../utils/drag-and-drop/useDragAndDrop';
 import {useId} from '../utils/useId';
 import {useSelectItem} from './Controls';
 
@@ -287,7 +287,7 @@ export default function Sidebar() {
 						'page-editor__sidebar__content': true,
 						'page-editor__sidebar__content--open': sidebarOpen,
 						rtl:
-							config.languageDirection[
+							Liferay.Language.direction[
 								themeDisplay?.getLanguageId()
 							] === 'rtl',
 					})}

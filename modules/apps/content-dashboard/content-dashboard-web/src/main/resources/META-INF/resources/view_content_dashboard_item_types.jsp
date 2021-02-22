@@ -22,8 +22,8 @@ ContentDashboardItemTypeItemSelectorViewManagementToolbarDisplayContext contentD
 ContentDashboardItemTypeItemSelectorViewDisplayContext contentDashboardItemTypeItemSelectorViewDisplayContext = (ContentDashboardItemTypeItemSelectorViewDisplayContext)request.getAttribute(ContentDashboardItemTypeItemSelectorViewDisplayContext.class.getName());
 %>
 
-<clay:management-toolbar-v2
-	displayContext="<%= contentDashboardItemTypeItemSelectorViewManagementToolbarDisplayContext %>"
+<clay:management-toolbar
+	managementToolbarDisplayContext="<%= contentDashboardItemTypeItemSelectorViewManagementToolbarDisplayContext %>"
 />
 
 <clay:container-fluid>
@@ -66,7 +66,7 @@ ContentDashboardItemTypeItemSelectorViewDisplayContext contentDashboardItemTypeI
 		'<portlet:namespace />contentDashboardItemTypes'
 	);
 
-	searchContainer.on('rowToggled', function (event) {
+	searchContainer.on('rowToggled', (event) => {
 		var allSelectedElements = event.elements.allSelectedElements;
 		var arr = [];
 

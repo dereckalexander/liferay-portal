@@ -71,6 +71,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleThreadLocal;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -166,6 +167,9 @@ public class DataLayoutTaglibUtil {
 			dataLayoutBuilderDefinition.getDisabledProperties()
 		).put(
 			"disabledTabs", dataLayoutBuilderDefinition.getDisabledTabs()
+		).put(
+			"visibleProperties",
+			dataLayoutBuilderDefinition.getVisibleProperties()
 		);
 
 		if (dataLayoutBuilderDefinition.allowRules()) {
@@ -406,14 +410,13 @@ public class DataLayoutTaglibUtil {
 		HttpServletResponse httpServletResponse) {
 
 		try {
-			if (Validator.isNull(dataDefinitionId) &&
-				Validator.isNull(dataLayoutId)) {
+			String dataLayoutString = ParamUtil.getString(
+				httpServletRequest, "dataLayout");
 
+			if (Validator.isNotNull(dataLayoutString)) {
 				DataLayoutDDMFormAdapter dataLayoutDDMFormAdapter =
 					new DataLayoutDDMFormAdapter(
-						availableLocales,
-						DataLayout.toDTO(
-							httpServletRequest.getParameter("dataLayout")),
+						availableLocales, DataLayout.toDTO(dataLayoutString),
 						httpServletRequest, httpServletResponse);
 
 				return dataLayoutDDMFormAdapter.toJSONObject();

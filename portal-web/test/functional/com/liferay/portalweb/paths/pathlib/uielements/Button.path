@@ -269,6 +269,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>DUPLICATE</td>
+	<td>//button[contains(@class, 'ddm-form-field-repeatable-add-button p-0 btn btn-sm btn-primary')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>EDIT</td>
 	<td>//a[contains(@class,'btn') and contains(.,'Edit')] | //a[contains(@id,'edit') and contains(@class,'btn')] | //button[contains(.,'Edit')]</td>
 	<td></td>
@@ -399,6 +404,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>LOCALIZATION_SUMMARY</td>
+	<td>//button[@id='_com_liferay_journal_web_portlet_JournalPortlet__com_liferay_journal_web_portlet_JournalPortlet_descriptionMapAsXMLMenu']</td>
+	<td></td>
+</tr>
+<tr>
 	<td>MAKE_DEFAULT</td>
 	<td>//button[contains(.,'Make Default') and contains(@data-value,'${key_language}')]</td>
 	<td></td>
@@ -514,8 +524,13 @@
 	<td></td>
 </tr>
 <tr>
+	<td>REMOVE_BUTTON</td>
+	<td>//button[contains(@class, 'ddm-form-field-repeatable-delete-button p-0 btn btn-sm btn-primary')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>REMOVE_IMAGE</td>
-	<td>//button[@id='sdjj___removeImage']</td>
+	<td>//button[*[name()='svg'][contains(@class,'lexicon-icon-trash')]]</td>
 	<td></td>
 </tr>
 <tr>
@@ -660,7 +675,7 @@
 </tr>
 <tr>
 	<td>SELECT_FILE_SMALL_IMAGE</td>
-	<td>//div[contains(@class,'blogs-small-image-selector')]//a[contains(.,'Select File')]</td>
+	<td>//div[contains(@class,'blogs-small-image-selector')]//div[contains(@class,'browse-image-controls')]//button[contains(.,'Select File')]</td>
 	<td></td>
 </tr>
 <tr>

@@ -57,6 +57,7 @@ import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -201,6 +202,37 @@ public abstract class TopLevelBuild extends BaseBuild {
 		String tempMapName = "git." + gitRepositoryType + ".properties";
 
 		return getTempMap(tempMapName);
+	}
+
+	public JSONObject getBuildResultsJSONObject(
+		String[] buildResults, String[] testStatuses, String[] dataTypes) {
+
+		JSONObject buildResultsJSONObject = new JSONObject();
+
+		JSONArray downstreamBuildJSONArray = new JSONArray();
+
+		List<String> buildResultsList = Collections.emptyList();
+
+		if (buildResults != null) {
+			buildResultsList = Arrays.asList(buildResults);
+		}
+
+		for (Build downstreamBuild : getDownstreamBuilds(null)) {
+			if (buildResultsList.isEmpty() ||
+				buildResultsList.contains(downstreamBuild.getResult())) {
+
+				downstreamBuildJSONArray.put(
+					downstreamBuild.getBuildResultsJSONObject(
+						buildResults, testStatuses, dataTypes));
+			}
+		}
+
+		buildResultsJSONObject.put("batchResults", downstreamBuildJSONArray);
+		buildResultsJSONObject.put("buildNumber", getBuildNumber());
+		buildResultsJSONObject.put("jobURL", getJobURL());
+		buildResultsJSONObject.put("upstreamBranchSHA", getUpstreamBranchSHA());
+
+		return buildResultsJSONObject;
 	}
 
 	public String getCompanionBranchName() {
@@ -1424,8 +1456,7 @@ public abstract class TopLevelBuild extends BaseBuild {
 					"General-Commands",
 			"reevaluation");
 
-		String buildID = JenkinsResultsParserUtil.getBuildID(
-			getBuildURL(), getTestSuiteName());
+		String buildID = JenkinsResultsParserUtil.getBuildID(getBuildURL());
 
 		Element preElement = Dom4JUtil.getNewElement(
 			"pre", null, "ci:reevaluate:" + buildID);
@@ -1592,11 +1623,7 @@ public abstract class TopLevelBuild extends BaseBuild {
 				UpstreamFailureUtil.getUpstreamJobFailuresBuildNumber(
 					this, upstreamBranchSHA);
 
-			if ((result != null) && !result.equals("SUCCESS") &&
-				(buildNumber != 0) &&
-				!upstreamBranchSHA.equals(
-					UpstreamFailureUtil.getUpstreamJobFailuresSHA(this))) {
-
+			if (isEligibleForReevaluation(result, upstreamBranchSHA)) {
 				Dom4JUtil.addToElement(
 					detailsElement, Dom4JUtil.getNewElement("br"),
 					getReevaluationDetailsElement(buildNumber));
@@ -1671,6 +1698,20 @@ public abstract class TopLevelBuild extends BaseBuild {
 					buildNumber));
 
 		return upstreamComparisonDetailsElement;
+	}
+
+	protected boolean isEligibleForReevaluation(
+		String result, String upstreamBranchSHA) {
+
+		if ((result != null) && !result.matches("(APPROVED|SUCCESS)") &&
+			!downstreamBuilds.isEmpty() &&
+			!upstreamBranchSHA.equals(
+				UpstreamFailureUtil.getUpstreamJobFailuresSHA(this))) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	protected void sendBuildMetrics(String message) {

@@ -169,8 +169,9 @@ else {
 						</liferay-ui:icon-menu>
 					</div>
 
-					<%
-					if (fileEntryTypeId > 0) {
+					<c:if test="<%= fileEntryTypeId > 0 %>">
+
+						<%
 						try {
 							List<DDMStructure> ddmStructures = fileEntryType.getDDMStructures();
 
@@ -188,24 +189,25 @@ else {
 								if (groupId <= 0) {
 									groupId = ddmStructure.getGroupId();
 								}
-					%>
+						%>
 
 								<div class="document-type-fields">
 									<liferay-data-engine:data-layout-renderer
 										containerId='<%= liferayPortletResponse.getNamespace() + "dataEngineLayoutRenderer" + ddmStructure.getStructureId() %>'
 										dataDefinitionId="<%= ddmStructure.getStructureId() %>"
 										dataRecordValues="<%= DataRecordValuesUtil.getDataRecordValues(ddmFormValues, ddmStructure) %>"
-										namespace="<%= liferayPortletResponse.getNamespace() + ddmStructure.getStructureId() %>"
+										namespace="<%= liferayPortletResponse.getNamespace() + ddmStructure.getStructureId() + StringPool.UNDERLINE %>"
 									/>
 								</div>
 
-					<%
+						<%
 							}
 						}
 						catch (Exception e) {
 						}
-					}
-					%>
+						%>
+
+					</c:if>
 
 					<aui:script position="inline" require="frontend-js-web/liferay/delegate/delegate.es as delegateModule,frontend-js-web/liferay/util/run_scripts_in_element.es as runScriptsInElement">
 						var documentTypeMenuList = document.querySelector(
@@ -215,14 +217,14 @@ else {
 						if (documentTypeMenuList) {
 							var delegate = delegateModule.default;
 
-							delegate(documentTypeMenuList, 'click', 'li a', function (event) {
+							delegate(documentTypeMenuList, 'click', 'li a', (event) => {
 								event.preventDefault();
 
 								Liferay.Util.fetch(event.delegateTarget.getAttribute('href'))
-									.then(function (response) {
+									.then((response) => {
 										return response.text();
 									})
-									.then(function (response) {
+									.then((response) => {
 										var commonFileMetadataContainer = document.getElementById(
 											'<portlet:namespace />commonFileMetadataContainer'
 										);
@@ -239,7 +241,7 @@ else {
 
 										var selectedFileNodes = Array.prototype.filter.call(
 											fileNodes,
-											function (fileNode) {
+											(fileNode) => {
 												return fileNode.checked;
 											}
 										);

@@ -69,6 +69,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>PAGINATION_NEXT_LINK</td>
+	<td>//a[contains(@class, 'page-link')]//*[contains(@class,'lexicon-icon-angle-right')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>PAGINATION_RESULTS</td>
 	<td>//div[@class='pagination-results']</td>
 	<td></td>
@@ -281,6 +286,17 @@
 <tr>
 	<td>TAGS_LIST_TAB_USED_TIMES</td>
 	<td>//a[contains(@href, '${key_tagName}')]//*[contains(.,'Used ${key_amountOfUsedTimes} Times')]</td>
+	<td></td>
+</tr>
+<!--RELATED_QUESTIONS-->
+<tr>
+	<td>RELATED_QUESTIONS_EMPTY_TEXT</td>
+	<td>//h2[contains(@class,'text-secondary') and contains(.,'No related questions were found.')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>RELATED_QUESTIONS_QUESTIONS_TITLE</td>
+	<td>//a[contains(@class,'questions-title')]/h3[contains(.,'${key_questionTitle}')]</td>
 	<td></td>
 </tr>
 </tbody>

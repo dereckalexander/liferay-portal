@@ -233,6 +233,10 @@ public class UpgradeLayoutPageTemplateStructureRel extends UpgradeProcess {
 						fragmentStyledLayoutStructureItem.
 							getFragmentEntryLinkId());
 
+				if (fragmentEntryLink == null) {
+					continue;
+				}
+
 				JSONObject editableValuesJSONObject =
 					JSONFactoryUtil.createJSONObject(
 						fragmentEntryLink.getEditableValues());
@@ -242,15 +246,15 @@ public class UpgradeLayoutPageTemplateStructureRel extends UpgradeProcess {
 						"com.liferay.fragment.entry.processor.freemarker." +
 							"FreeMarkerFragmentEntryProcessor");
 
+				if (_isEmpty(fragmentConfigValuesJSONObject)) {
+					continue;
+				}
+
 				_replaceBottomSpacing(
 					_fragmentEntryConfigurationParser.
 						getConfigurationDefaultValuesJSONObject(
 							fragmentEntryLink.getConfiguration()),
 					fragmentConfigValuesJSONObject, stylesJSONObject);
-
-				if (_isEmpty(fragmentConfigValuesJSONObject)) {
-					continue;
-				}
 
 				_replaceAlign(fragmentConfigValuesJSONObject, stylesJSONObject);
 				_replaceBorderRadius(

@@ -1508,6 +1508,12 @@ war.path=${app.server.portal.dir}/</echo>
 					</execute>
 				</else>
 			</if>
+
+			<execute>
+				<![CDATA[
+					tail -n 100 "${patching.tool.dir}/logs/patching-tool.log"
+				]]>
+			</execute>
 		</sequential>
 	</macrodef>
 
@@ -2440,7 +2446,7 @@ jdbc.default.password=${database.password}</echo>
 						<then>
 							<local name="regex" />
 
-							<property name="regex" value="\s*&lt;resource-root path=&quot;@{petra.jar.file}&quot;\s/&gt;[\n\r]" />
+							<property name="regex" value="\s*&lt;resource-root path=&quot;@{petra.jar.file}&quot;\s/&gt;" />
 
 							<replaceregexp
 								file="${module.configuration.path}"
@@ -4047,7 +4053,11 @@ go</echo>
 					</then>
 				</elseif>
 				<elseif>
-					<equals arg1="@{liferay.portal.bundle}" arg2="7.3.10" />
+					<or>
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.1.10.5" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.3.5" />
+						<equals arg1="@{liferay.portal.bundle}" arg2="7.3.10" />
+					</or>
 					<then>
 						<var name="app.server.tomcat.version" value="9.0.37" />
 					</then>
@@ -4417,6 +4427,17 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 						<equals arg1="${commerce.enabled}" arg2="false" />
 						<then>
 							<delete failonerror="false" file="${liferay.home}/deploy/portal-commerce-license.xml" verbose="true" />
+						</then>
+					</if>
+
+					<get-testcase-property property.name="deploy.lcs.token.file" />
+
+					<if>
+						<equals arg1="${deploy.lcs.token.file}" arg2="true" />
+						<then>
+							<delete failonerror="false" file="${liferay.home}/deploy/license.xml" verbose="true" />
+
+							<antcall target="deploy-lcs-environment-token" />
 						</then>
 					</if>
 
@@ -5448,7 +5469,11 @@ war.path=${app.server.portal.dir}/</echo>
 				</else>
 			</if>
 
-			<print-file file.name="${patching.tool.dir}/logs/patching-tool.log" />
+			<execute>
+				<![CDATA[
+					tail -n 100 "${patching.tool.dir}/logs/patching-tool.log"
+				]]>
+			</execute>
 
 			<delete file="@{patching.tool.dir}/logs/patching-tool.log" />
 
@@ -5629,6 +5654,7 @@ war.path=${app.server.portal.dir}/</echo>
 						<equals arg1="${commerce.enabled}" arg2="false" />
 					</not>
 					<or>
+						<equals arg1="${commerce.enabled}" arg2="true" />
 						<equals arg1="${env.CI_TEST_SUITE}" arg2="portal-fixpack-release" />
 						<equals arg1="${env.CI_TEST_SUITE}" arg2="portal-hotfix-release" />
 						<equals arg1="${env.CI_TEST_SUITE}" arg2="portal-release" />
@@ -5894,6 +5920,12 @@ war.path=${app.server.portal.dir}/</echo>
 							<property name="portal.version.url.path" value="7.3.0-ga1" />
 						</then>
 					</elseif>
+					<elseif>
+						<equals arg1="${portal.version}" arg2="7.3.5" />
+						<then>
+							<property name="portal.version.url.path" value="7.3.5-ga6" />
+						</then>
+					</elseif>
 					<else>
 						<property name="portal.version.url.path" value="${portal.version}" />
 					</else>
@@ -5910,6 +5942,7 @@ war.path=${app.server.portal.dir}/</echo>
 						<equals arg1="${portal.version}" arg2="7.2.0" />
 						<equals arg1="${portal.version}" arg2="7.2.1" />
 						<equals arg1="${portal.version}" arg2="7.3.0" />
+						<equals arg1="${portal.version}" arg2="7.3.5" />
 					</or>
 					<then>
 						<propertycopy from="sql.legacy.base.url[ce]" name="sql.legacy.base.url" />
@@ -6788,6 +6821,14 @@ go</echo>
 				<echo>${liferay.home}/osgi/modules/${liferay.dependency.jars} </echo>
 			</then>
 		</if>
+	</target>
+
+	<target name="delete-license-file">
+		<fail message="Please set the property ${license.xml.file}." unless="license.xml.file" />
+
+		<delete file="${liferay.home}/osgi/modules/${license.xml.file}" />
+
+		<delete dir="${liferay.home}/data/license" />
 	</target>
 
 	<target name="delete-liferay-home">
@@ -8101,8 +8142,6 @@ virtualHostname="localhost"
 				<install-patch patching.tool.dir="${patching.tool.dir}" patch.file.zip.url="${patch.file.zip.url}" />
 
 				<validate-installed-patches patching.tool.dir="${patching.tool.dir}" />
-
-				<print-file file.name="${patching.tool.dir}/logs/patching-tool.log" />
 
 				<delete file="@{patching.tool.dir}/logs/patching-tool.log" />
 			</else>
@@ -9642,6 +9681,8 @@ auto.deploy.dest.dir=C:/WINDOWS/system32/config/systemprofile/liferay/websphere-
 			</else>
 		</if>
 
+		<get-testcase-property property.name="test.skip.tear.down" />
+
 		<if>
 			<and>
 				<contains string="${test.class}" substring="," />
@@ -11096,16 +11137,6 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 				</if>
 
 				<delete file="liferay-portal-tools.zip" />
-
-				<if>
-					<or>
-						<equals arg1="${app.server.type}" arg2="jboss" />
-						<equals arg1="${app.server.type}" arg2="wildfly" />
-					</or>
-					<then>
-						<prepare-jboss-module-configuration />
-					</then>
-				</if>
 			</else>
 		</if>
 
@@ -11257,6 +11288,18 @@ ANT_OPTS=${env.ANT_OPTS}</echo>
 						</if>
 					</then>
 				</if>
+			</then>
+		</if>
+
+		<if>
+			<or>
+				<equals arg1="${app.server.type}" arg2="jboss" />
+				<equals arg1="${app.server.type}" arg2="wildfly" />
+			</or>
+			<then>
+				<prepare-jboss-module-configuration />
+
+				<print-file file.name="${app.server.lib.global.dir}/module.xml" />
 			</then>
 		</if>
 

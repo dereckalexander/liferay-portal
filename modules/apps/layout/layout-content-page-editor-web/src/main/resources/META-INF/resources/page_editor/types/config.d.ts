@@ -30,8 +30,11 @@ export interface Config {
 
 	availableLanguages: {
 		[key: string]: {
+			default: boolean;
+			displayName: string;
 			languageIcon: string;
-			languageLabel: string;
+			languageId: string;
+			w3cLanguageId: string;
 		};
 	};
 
@@ -78,12 +81,13 @@ export interface Config {
 
 	containerItemFlexEnabled: boolean;
 
-	defaultEditorConfigurations: {
-		[key: 'comment' | 'rich-text' | 'text']: {
+	defaultEditorConfigurations: Record<
+		'comment' | 'rich-text' | 'text',
+		{
 			editorConfig: object;
 			editorOptions: object;
-		};
-	};
+		}
+	>;
 
 	defaultLanguageId: string;
 	defaultStyleBookEntryName: string;
@@ -121,14 +125,12 @@ export interface Config {
 	getIframeContentURL: string;
 	getInfoItemFieldValueURL: string;
 	getInfoItemMappingFieldsURL: string;
+	getLayoutFriendlyURL: string;
 	getPageContentsURL: string;
 	imageSelectorURL: string;
 	infoItemSelectorURL: string;
 
-	languageDirection: {
-		[key: string]: 'ltr' | 'rtl';
-	};
-
+	layoutItemSelectorURL: String;
 	layoutConversionWarningMessages: string[] | null;
 	layoutType: LayoutTypes[keyof LayoutTypes];
 	lookAndFeelURL: string;

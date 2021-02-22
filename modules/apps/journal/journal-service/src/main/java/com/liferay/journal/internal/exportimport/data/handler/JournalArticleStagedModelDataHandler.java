@@ -444,8 +444,7 @@ public class JournalArticleStagedModelDataHandler
 					_dlReferencesExportImportContentProcessor.
 						replaceExportContentReferences(
 							portletDataContext, article,
-							article.getSmallImageURL() + StringPool.SPACE, true,
-							false);
+							article.getSmallImageURL(), true, false);
 
 				article.setSmallImageURL(smallImageURL);
 			}
@@ -1246,7 +1245,7 @@ public class JournalArticleStagedModelDataHandler
 	protected String[] getSkipImportReferenceStagedModelNames() {
 		return new String[] {
 			AssetDisplayPageEntry.class.getName(),
-			FriendlyURLEntry.class.getName(), Layout.class.getName()
+			FriendlyURLEntry.class.getName()
 		};
 	}
 

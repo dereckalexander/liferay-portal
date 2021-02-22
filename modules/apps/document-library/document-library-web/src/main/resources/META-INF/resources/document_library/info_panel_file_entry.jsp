@@ -83,6 +83,7 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 	<liferay-ui:tabs
 		cssClass="navbar-no-collapse"
 		names="<%= tabsNames %>"
+		param='<%= "tabs_" + fileEntry.getFileEntryId() %>'
 		refresh="<%= false %>"
 	>
 		<liferay-ui:section>
@@ -451,7 +452,7 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 									cssClass="metadata"
 									defaultState="closed"
 									extended="<%= true %>"
-									id='<%= "documentLibraryMetadataPanel" + StringPool.UNDERLINE + ddmStructure.getStructureId() %>'
+									id='<%= "documentLibraryMetadataPanel_" + fileEntry.getFileEntryId() %>'
 									markupView="lexicon"
 									persistState="<%= true %>"
 									title="<%= HtmlUtil.escape(ddmStructure.getName(locale)) %>"
@@ -460,7 +461,7 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 										containerId='<%= liferayPortletResponse.getNamespace() + "dataEngineLayoutRenderer" + ddmStructure.getStructureId() %>'
 										dataDefinitionId="<%= ddmStructure.getStructureId() %>"
 										dataRecordValues="<%= DataRecordValuesUtil.getDataRecordValues(ddmFormValues, ddmStructure) %>"
-										namespace="<%= liferayPortletResponse.getNamespace() + ddmStructure.getStructureId() %>"
+										namespace="<%= liferayPortletResponse.getNamespace() + ddmStructure.getStructureId() + StringPool.UNDERLINE %>"
 										readOnly="<%= true %>"
 									/>
 								</liferay-ui:panel>
@@ -510,15 +511,14 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 						if (fileEntryMetadata != null) {
 							ddmFormValues = dlViewFileVersionDisplayContext.getDDMFormValues(fileEntryMetadata.getDDMStorageId());
 						}
-
-						if (ddmFormValues != null) {
 				%>
 
+						<c:if test="<%= ddmFormValues != null %>">
 							<liferay-ui:panel
 								collapsible="<%= true %>"
 								cssClass="lfr-asset-metadata panel-unstyled"
 								defaultState="closed"
-								id='<%= "documentLibraryMetadataPanel" + StringPool.UNDERLINE + ddmStructure.getStructureId() %>'
+								id='<%= "documentLibraryMetadataPanel_" + fileEntry.getFileEntryId() %>'
 								markupView="lexicon"
 								persistState="<%= true %>"
 								title='<%= "metadata." + ddmStructure.getStructureKey() %>'
@@ -534,9 +534,9 @@ long assetClassPK = DLAssetHelperUtil.getAssetClassPK(fileEntry, fileVersion);
 									showEmptyFieldLabel="<%= false %>"
 								/>
 							</liferay-ui:panel>
+						</c:if>
 
 				<%
-						}
 					}
 				}
 				catch (Exception e) {

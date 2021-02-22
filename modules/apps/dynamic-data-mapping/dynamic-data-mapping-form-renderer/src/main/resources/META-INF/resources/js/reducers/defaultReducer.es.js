@@ -69,6 +69,11 @@ export default (state, action) => {
 								}
 							}
 
+							try {
+								_value = JSON.parse(_value);
+							}
+							catch (e) {}
+
 							return {
 								value: _value,
 							};
@@ -82,10 +87,6 @@ export default (state, action) => {
 
 			return action.payload;
 		}
-		case EVENT_TYPES.UPDATE_DATA_RECORD_VALUES:
-			return {
-				dataRecordValues: action.payload,
-			};
 		default:
 			return state;
 	}

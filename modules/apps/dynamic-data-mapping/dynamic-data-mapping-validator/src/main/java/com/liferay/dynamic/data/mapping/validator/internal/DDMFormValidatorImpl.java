@@ -48,6 +48,8 @@ import com.liferay.dynamic.data.mapping.validator.DDMFormValidator;
 import com.liferay.dynamic.data.mapping.validator.internal.util.DDMFormRuleValidatorUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.SetUtil;
@@ -94,8 +96,9 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 		_validateDDMFormFieldNames(ddmFormFields);
 
 		validateDDMFormFields(
-			ddmFormFields, new HashSet<String>(), ddmForm.getAvailableLocales(),
-			ddmForm.getDefaultLocale());
+			ddmFormFields, new HashSet<String>(),
+			ddmForm.allowInvalidAvailableLocalesForProperty(),
+			ddmForm.getAvailableLocales(), ddmForm.getDefaultLocale());
 	}
 
 	@Reference(unbind = "-")
@@ -267,6 +270,7 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 
 	protected void validateDDMFormFields(
 			List<DDMFormField> ddmFormFields, Set<String> ddmFormFieldNames,
+			boolean allowInvalidAvailableLocalesForProperty,
 			Set<Locale> ddmFormAvailableLocales, Locale ddmFormDefaultLocale)
 		throws DDMFormFieldValueValidationException,
 			   DDMFormValidationException {
@@ -282,12 +286,12 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 				ddmFormField, ddmFormAvailableLocales, ddmFormDefaultLocale);
 
 			validateOptionalDDMFormFieldLocalizedProperty(
-				ddmFormField, "label", ddmFormAvailableLocales,
-				ddmFormDefaultLocale);
+				ddmFormField, "label", allowInvalidAvailableLocalesForProperty,
+				ddmFormAvailableLocales, ddmFormDefaultLocale);
 
 			validateOptionalDDMFormFieldLocalizedProperty(
-				ddmFormField, "tip", ddmFormAvailableLocales,
-				ddmFormDefaultLocale);
+				ddmFormField, "tip", allowInvalidAvailableLocalesForProperty,
+				ddmFormAvailableLocales, ddmFormDefaultLocale);
 
 			validateDDMFormFieldValidationExpression(
 				ddmFormField, ddmFormAvailableLocales);
@@ -295,6 +299,7 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 
 			validateDDMFormFields(
 				ddmFormField.getNestedDDMFormFields(), ddmFormFieldNames,
+				allowInvalidAvailableLocalesForProperty,
 				ddmFormAvailableLocales, ddmFormDefaultLocale);
 		}
 	}
@@ -369,6 +374,10 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 			}
 		}
 		catch (DDMExpressionException ddmExpressionException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ddmExpressionException, ddmExpressionException);
+			}
+
 			throw new MustSetValidValidationExpression(
 				ddmFormField.getName(),
 				ddmFormFieldValidationExpression.getValue());
@@ -392,6 +401,10 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 				).build());
 		}
 		catch (DDMExpressionException ddmExpressionException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(ddmExpressionException, ddmExpressionException);
+			}
+
 			throw new MustSetValidVisibilityExpression(
 				ddmFormField.getName(), visibilityExpression);
 		}
@@ -412,6 +425,7 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 
 	protected void validateOptionalDDMFormFieldLocalizedProperty(
 			DDMFormField ddmFormField, String propertyName,
+			boolean allowInvalidAvailableLocalesForProperty,
 			Set<Locale> ddmFormAvailableLocales, Locale ddmFormDefaultLocale)
 		throws DDMFormValidationException {
 
@@ -425,9 +439,22 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 			return;
 		}
 
-		validateDDMFormFieldPropertyValue(
-			ddmFormField.getName(), propertyName, propertyValue,
-			ddmFormAvailableLocales, ddmFormDefaultLocale);
+		try {
+			validateDDMFormFieldPropertyValue(
+				ddmFormField.getName(), propertyName, propertyValue,
+				ddmFormAvailableLocales, ddmFormDefaultLocale);
+		}
+		catch (DDMFormValidationException ddmFormValidationException) {
+			if ((ddmFormValidationException instanceof
+					DDMFormValidationException.
+						MustSetValidAvailableLocalesForProperty) &&
+				allowInvalidAvailableLocalesForProperty) {
+
+				return;
+			}
+
+			throw ddmFormValidationException;
+		}
 	}
 
 	private void _validateDDMFormFieldNames(List<DDMFormField> ddmFormFields)
@@ -462,6 +489,9 @@ public class DDMFormValidatorImpl implements DDMFormValidator {
 	private static final String[] _DDM_FORM_FIELD_INDEX_TYPES = {
 		StringPool.BLANK, "keyword", "none", "text"
 	};
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		DDMFormValidatorImpl.class);
 
 	private static final Pattern _ddmFormFieldNamePattern = Pattern.compile(
 		"([^\\p{Punct}|\\p{Space}$]|_)+");

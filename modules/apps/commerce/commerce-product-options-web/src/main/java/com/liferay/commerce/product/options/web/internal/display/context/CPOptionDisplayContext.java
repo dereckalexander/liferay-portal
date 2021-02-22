@@ -33,10 +33,13 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
+import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.settings.SystemSettingsLocator;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +48,7 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 import javax.portlet.RenderURL;
 import javax.portlet.WindowStateException;
@@ -59,12 +63,14 @@ public class CPOptionDisplayContext {
 	public CPOptionDisplayContext(
 			ConfigurationProvider configurationProvider, CPOption cpOption,
 			DDMFormFieldTypeServicesTracker ddmFormFieldTypeServicesTracker,
+			PortletResourcePermission portletResourcePermission,
 			HttpServletRequest httpServletRequest)
 		throws PortalException {
 
 		_configurationProvider = configurationProvider;
 		_cpOption = cpOption;
 		_ddmFormFieldTypeServicesTracker = ddmFormFieldTypeServicesTracker;
+		_portletResourcePermission = portletResourcePermission;
 
 		cpRequestHelper = new CPRequestHelper(httpServletRequest);
 	}
@@ -137,7 +143,7 @@ public class CPOptionDisplayContext {
 		CPOptionConfiguration cpOptionConfiguration =
 			_configurationProvider.getConfiguration(
 				CPOptionConfiguration.class,
-				new SystemSettingsLocator(CPConstants.CP_OPTION_SERVICE_NAME));
+				new SystemSettingsLocator(CPConstants.SERVICE_NAME_CP_OPTION));
 
 		String[] ddmFormFieldTypesAllowed =
 			cpOptionConfiguration.ddmFormFieldTypesAllowed();
@@ -151,16 +157,9 @@ public class CPOptionDisplayContext {
 
 		RenderResponse renderResponse = cpRequestHelper.getRenderResponse();
 
-		RenderURL cancelURL = renderResponse.createRenderURL();
-
-		HeaderActionModel cancelHeaderActionModel = new HeaderActionModel(
-			null, cancelURL.toString(), null, "cancel");
-
-		headerActionModels.add(cancelHeaderActionModel);
-
 		HeaderActionModel publishHeaderActionModel = new HeaderActionModel(
 			"btn-primary", renderResponse.getNamespace() + "fm", null, null,
-			"publish");
+			"save");
 
 		headerActionModels.add(publishHeaderActionModel);
 
@@ -233,6 +232,16 @@ public class CPOptionDisplayContext {
 				dropdownItem.setTarget("modal");
 			}
 		).build();
+	}
+
+	public boolean hasPermission(String actionId) throws PortalException {
+		RenderRequest renderRequest = cpRequestHelper.getRenderRequest();
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		return _portletResourcePermission.contains(
+			themeDisplay.getPermissionChecker(), null, actionId);
 	}
 
 	public boolean hasValues(CPOption cpOption) {
@@ -314,5 +323,6 @@ public class CPOptionDisplayContext {
 	private CPOption _cpOption;
 	private final DDMFormFieldTypeServicesTracker
 		_ddmFormFieldTypeServicesTracker;
+	private final PortletResourcePermission _portletResourcePermission;
 
 }

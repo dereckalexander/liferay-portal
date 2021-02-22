@@ -35,6 +35,7 @@ const {getDataLayoutBuilderProps} = FORM_VIEW;
 const defaultState = {
 	appProps: {
 		config: {},
+		contentTypeConfig: {},
 		dataDefinitionId: 1,
 		dataLayoutId: 1,
 		fieldTypesModules: '',
@@ -75,16 +76,6 @@ describe('FieldSets', () => {
 	beforeEach(() => {
 		dataLayoutBuilderProps = getDataLayoutBuilderProps();
 
-		dataLayoutBuilderProps = {
-			...dataLayoutBuilderProps,
-			props: {
-				...dataLayoutBuilderProps.props,
-				contentTypeConfig: {
-					allowInvalidAvailableLocalesForProperty: false,
-				},
-			},
-		};
-
 		ddmFormSpy = jest
 			.spyOn(DDMForm, 'default')
 			.mockImplementation((props) => {
@@ -117,6 +108,12 @@ describe('FieldSets', () => {
 
 		window.Liferay = {
 			...window.Liferay,
+			Language: {
+				...window.Liferay.Language,
+				direction: {
+					pt_BR: 'ltr',
+				},
+			},
 			Loader: {
 				require: () => jest.fn(),
 			},
@@ -429,11 +426,15 @@ describe('FieldSets', () => {
 		fireEvent.doubleClick(container.querySelector('.field-type'));
 
 		const [action, payload] = dataLayoutBuilderProps.dispatch.mock.calls[0];
-		const {fieldName, indexes} = payload;
+
+		const {
+			fieldSet: {name},
+			indexes,
+		} = payload;
 
 		expect(action).toBe('fieldSetAdded');
 
-		expect(fieldName).toStrictEqual({en_US: 'Address', pt_BR: 'Endereço'});
+		expect(name).toStrictEqual({en_US: 'Address', pt_BR: 'Endereço'});
 		expect(indexes).toStrictEqual({
 			columnIndex: 0,
 			pageIndex: 0,

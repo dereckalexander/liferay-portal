@@ -108,7 +108,10 @@ renderResponse.setTitle((structure == null) ? LanguageUtil.get(request, "new-ele
 </div>
 
 <div class="hide">
-	<%= ddmFormAdminDisplayContext.serializeSettingsForm(pageContext) %>
+	<react:component
+		module="admin/js/index.es"
+		props="<%= ddmFormAdminDisplayContext.getDDMFormSettingsContext(pageContext) %>"
+	/>
 </div>
 
 <aui:script>
@@ -138,7 +141,7 @@ renderResponse.setTitle((structure == null) ? LanguageUtil.get(request, "new-ele
 		start: function (initialPages) {
 			Liferay.Loader.require(
 				'<%= mainRequire %>',
-				function (packageName) {
+				(packageName) => {
 					var context = <%= serializedFormBuilderContext %>;
 
 					if (context.pages.length === 0 && initialPages) {
@@ -170,7 +173,7 @@ renderResponse.setTitle((structure == null) ? LanguageUtil.get(request, "new-ele
 						'#<portlet:namespace />-container'
 					);
 				},
-				function (error) {
+				(error) => {
 					throw error;
 				}
 			);
@@ -185,7 +188,7 @@ renderResponse.setTitle((structure == null) ? LanguageUtil.get(request, "new-ele
 				'<portlet:namespace />translationManager'
 			);
 
-			Liferay.destroyComponents(function (component) {
+			Liferay.destroyComponents((component) => {
 				var destroy = false;
 
 				if (component === translationManager) {

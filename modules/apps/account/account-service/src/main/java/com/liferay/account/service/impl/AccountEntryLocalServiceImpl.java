@@ -28,6 +28,7 @@ import com.liferay.account.service.base.AccountEntryLocalServiceBaseImpl;
 import com.liferay.petra.sql.dsl.DSLFunctionFactoryUtil;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.sql.dsl.expression.Predicate;
+import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.petra.sql.dsl.query.FromStep;
 import com.liferay.petra.sql.dsl.query.GroupByStep;
 import com.liferay.petra.sql.dsl.query.JoinStep;
@@ -47,6 +48,8 @@ import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserTable;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.Indexable;
+import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.search.SearchContext;
@@ -242,10 +245,15 @@ public class AccountEntryLocalServiceImpl
 			user.getCompanyId(), 0, user.getUserId(),
 			AccountEntry.class.getName(), accountEntryId, false, false, false);
 
-		// Asset
-
 		if (serviceContext != null) {
+
+			// Asset
+
 			_updateAsset(accountEntry, serviceContext);
+
+			// Expando
+
+			accountEntry.setExpandoBridgeAttributes(serviceContext);
 		}
 
 		return accountEntry;
@@ -317,6 +325,10 @@ public class AccountEntryLocalServiceImpl
 		assetEntryLocalService.deleteEntry(
 			AccountEntry.class.getName(), accountEntry.getAccountEntryId());
 
+		// Expando
+
+		expandoRowLocalService.deleteRows(accountEntry.getAccountEntryId());
+
 		return accountEntry;
 	}
 
@@ -325,6 +337,71 @@ public class AccountEntryLocalServiceImpl
 		throws PortalException {
 
 		return deleteAccountEntry(getAccountEntry(accountEntryId));
+	}
+
+	@Override
+	public AccountEntry fetchPersonAccountEntry(long userId) {
+		return accountEntryPersistence.fetchByU_T_First(
+			userId, AccountConstants.ACCOUNT_ENTRY_TYPE_PERSON, null);
+	}
+
+	@Override
+	public AccountEntry fetchUserAccountEntry(
+		long userId, long accountEntryId) {
+
+		JoinStep joinStep = DSLQueryFactoryUtil.selectDistinct(
+			AccountEntryTable.INSTANCE
+		).from(
+			UserTable.INSTANCE
+		).leftJoinOn(
+			AccountEntryUserRelTable.INSTANCE,
+			AccountEntryUserRelTable.INSTANCE.accountUserId.eq(
+				UserTable.INSTANCE.userId)
+		);
+
+		Predicate accountEntryTablePredicate =
+			AccountEntryTable.INSTANCE.accountEntryId.eq(
+				AccountEntryUserRelTable.INSTANCE.accountEntryId
+			).or(
+				AccountEntryTable.INSTANCE.userId.eq(UserTable.INSTANCE.userId)
+			);
+
+		Long[] organizationIds = _getOrganizationIds(userId);
+
+		if (ArrayUtil.isNotEmpty(organizationIds)) {
+			joinStep = joinStep.leftJoinOn(
+				AccountEntryOrganizationRelTable.INSTANCE,
+				AccountEntryOrganizationRelTable.INSTANCE.organizationId.in(
+					organizationIds));
+
+			accountEntryTablePredicate = accountEntryTablePredicate.or(
+				AccountEntryTable.INSTANCE.accountEntryId.eq(
+					AccountEntryOrganizationRelTable.INSTANCE.accountEntryId));
+		}
+
+		joinStep = joinStep.leftJoinOn(
+			AccountEntryTable.INSTANCE, accountEntryTablePredicate);
+
+		DSLQuery dslQuery = joinStep.where(
+			UserTable.INSTANCE.userId.eq(
+				userId
+			).and(
+				AccountEntryTable.INSTANCE.type.neq(
+					AccountConstants.ACCOUNT_ENTRY_TYPE_GUEST)
+			).and(
+				AccountEntryTable.INSTANCE.accountEntryId.eq(accountEntryId)
+			)
+		).limit(
+			0, 1
+		);
+
+		List<AccountEntry> accountEntries = dslQuery(dslQuery);
+
+		if (accountEntries.isEmpty()) {
+			return null;
+		}
+
+		return accountEntries.get(0);
 	}
 
 	@Override
@@ -356,6 +433,7 @@ public class AccountEntryLocalServiceImpl
 		accountEntryImpl.setUserName(defaultUser.getFullName());
 		accountEntryImpl.setParentAccountEntryId(
 			AccountConstants.PARENT_ACCOUNT_ENTRY_ID_DEFAULT);
+		accountEntryImpl.setEmailAddress(defaultUser.getEmailAddress());
 		accountEntryImpl.setName(defaultUser.getFullName());
 		accountEntryImpl.setType(AccountConstants.ACCOUNT_ENTRY_TYPE_GUEST);
 		accountEntryImpl.setStatus(WorkflowConstants.STATUS_APPROVED);
@@ -540,20 +618,60 @@ public class AccountEntryLocalServiceImpl
 		accountEntry.setTaxIdNumber(taxIdNumber);
 		accountEntry.setStatus(status);
 
-		// Asset
-
 		if (serviceContext != null) {
+
+			// Asset
+
 			_updateAsset(accountEntry, serviceContext);
+
+			// Expando
+
+			accountEntry.setExpandoBridgeAttributes(serviceContext);
 		}
 
 		return accountEntryPersistence.update(accountEntry);
 	}
 
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
+	public AccountEntry updateDefaultBillingAddressId(
+			long accountEntryId, long addressId)
+		throws PortalException {
+
+		AccountEntry accountEntry = getAccountEntry(accountEntryId);
+
+		accountEntry.setDefaultBillingAddressId(addressId);
+
+		return updateAccountEntry(accountEntry);
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
+	public AccountEntry updateDefaultShippingAddressId(
+			long accountEntryId, long addressId)
+		throws PortalException {
+
+		AccountEntry accountEntry = getAccountEntry(accountEntryId);
+
+		accountEntry.setDefaultShippingAddressId(addressId);
+
+		return updateAccountEntry(accountEntry);
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
 	@Override
 	public AccountEntry updateStatus(AccountEntry accountEntry, int status) {
 		accountEntry.setStatus(status);
 
 		return updateAccountEntry(accountEntry);
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
+	public AccountEntry updateStatus(long accountEntryId, int status)
+		throws PortalException {
+
+		return updateStatus(getAccountEntry(accountEntryId), status);
 	}
 
 	private GroupByStep _getGroupByStep(
@@ -647,7 +765,7 @@ public class AccountEntryLocalServiceImpl
 			});
 	}
 
-	private Long[] _getOrganizationIds(long userId) throws PortalException {
+	private Long[] _getOrganizationIds(long userId) {
 		List<Organization> organizations =
 			organizationLocalService.getUserOrganizations(userId);
 

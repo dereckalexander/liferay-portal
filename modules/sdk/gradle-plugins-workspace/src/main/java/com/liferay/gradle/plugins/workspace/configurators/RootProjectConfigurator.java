@@ -598,6 +598,7 @@ public class RootProjectConfigurator implements Plugin<Project> {
 					try {
 						File destinationDir = workspaceExtension.getDockerDir();
 
+						_createTouchFile(new File(destinationDir, "configs"));
 						_createTouchFile(new File(destinationDir, "deploy"));
 						_createTouchFile(new File(destinationDir, "patching"));
 						_createTouchFile(new File(destinationDir, "scripts"));
@@ -1149,37 +1150,40 @@ public class RootProjectConfigurator implements Plugin<Project> {
 		Project project, Download downloadBundleTask,
 		WorkspaceExtension workspaceExtension) {
 
-		Verify verifyBundleTask = GradleUtil.addTask(
+		Verify verify = GradleUtil.addTask(
 			project, VERIFY_BUNDLE_TASK_NAME, Verify.class);
 
-		verifyBundleTask.algorithm("MD5");
-		verifyBundleTask.dependsOn(downloadBundleTask);
-		verifyBundleTask.setDescription(
-			"Verifies the Liferay bundle zip file.");
+		verify.algorithm("MD5");
+		verify.dependsOn(downloadBundleTask);
+		verify.setDescription("Verifies the Liferay bundle zip file.");
+
+		verify.onlyIf(
+			new Spec<Task>() {
+
+				@Override
+				public boolean isSatisfiedBy(Task task) {
+					return Validator.isNotNull(verify.getChecksum());
+				}
+
+			});
 
 		project.afterEvaluate(
 			new Action<Project>() {
 
 				@Override
 				public void execute(Project p) {
-					String checksum = workspaceExtension.getBundleChecksumMD5();
-
-					if (checksum == null) {
-						verifyBundleTask.setEnabled(false);
-					}
-
-					verifyBundleTask.checksum(checksum);
+					verify.checksum(workspaceExtension.getBundleChecksumMD5());
 
 					TaskOutputs taskOutputs = downloadBundleTask.getOutputs();
 
 					FileCollection fileCollection = taskOutputs.getFiles();
 
-					verifyBundleTask.src(fileCollection.getSingleFile());
+					verify.src(fileCollection.getSingleFile());
 				}
 
 			});
 
-		return verifyBundleTask;
+		return verify;
 	}
 
 	private void _configureNpmProject(Project project) {
@@ -1379,7 +1383,7 @@ public class RootProjectConfigurator implements Plugin<Project> {
 
 		if (dockerContainerId == null) {
 			workspaceExtension.setDockerContainerId(
-				project.getName() + "-liferay");
+				StringUtil.getDockerSafeName(project.getName()) + "-liferay");
 		}
 
 		String dockerImageId = workspaceExtension.getDockerImageId();
@@ -1400,7 +1404,9 @@ public class RootProjectConfigurator implements Plugin<Project> {
 			}
 
 			workspaceExtension.setDockerImageId(
-				String.format("%s-liferay:%s", project.getName(), version));
+				String.format(
+					"%s-liferay:%s",
+					StringUtil.getDockerSafeName(project.getName()), version));
 		}
 	}
 
