@@ -26,6 +26,148 @@ definition {
 		}
 	}
 
+	@description = "This smoke test ensure that the fields with option are working properly"
+	@priority = "5"
+	test AddAndEditTranslatedFieldsWithOptions {
+		NavItem.gotoStructures();
+
+		WebContentStructures.addCP(
+			structureDescription = "Structure Description",
+			structureName = "WC Structure Title");
+
+		DataEngine.addFieldMultipleOptions(
+			areFieldsAdded = "false",
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection",
+			fieldOptionValue = "Option",
+			optionsNumberList = "1,2,3,4,5");
+
+		WebContentStructures.addLocalization(
+			locale = "pt-BR",
+			localization1Name = "WC Título da estrutura");
+
+		DataEngine.addFieldMultipleOptions(
+			areFieldsAdded = "true",
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection",
+			fieldOptionValue = "Opção",
+			optionsNumberList = "1,2,3,4,5",
+			translationFieldLabel = "PT");
+
+		WebContentStructures.saveCP();
+
+		WebContentNavigator.gotoEditStructure(structureName = "WC Structure Title");
+
+		DataEngine.assertMultipleFieldLabel(fieldList = "Select from List,Single Selection,Multiple Selection,Grid");
+
+		DataEngine.assertMultipleOptions(
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection",
+			optionsNumberList = "1,2,3,4,5",
+			rootOptionValue = "Option");
+
+		PortletEntry.changeLocale(locale = "pt-BR");
+
+		DataEngine.assertMultipleFieldLabel(
+			appendToFieldLabel = "PT",
+			fieldList = "Select from List,Single Selection,Multiple Selection,Grid");
+
+		DataEngine.assertMultipleOptions(
+			fieldList = "Grid PT,Select from List PT,Single Selection PT,Multiple Selection PT",
+			optionsNumberList = "1,2,3,4,5",
+			rootOptionValue = "Opção");
+
+		WebContentStructures.addLocalization(
+			locale = "de-DE",
+			localization1Name = "WC Strukturtitel");
+
+		DataEngine.addFieldMultipleOptions(
+			areFieldsAdded = "true",
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection",
+			fieldOptionValue = "Möglichkeit",
+			optionsNumberList = "1,2,3,4,5",
+			translationFieldLabel = "DE");
+
+		PortletEntry.changeLocale(locale = "en-US");
+
+		DataEngine.editMultipleOptions(
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection",
+			fieldOptionValue = "Option EDITED",
+			optionsNumberList = "1,2,3,4,5");
+
+		DataEngine.editMultipleFieldLabel(
+			editFieldLabel = "EDITED",
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection");
+
+		PortletEntry.changeLocale(locale = "pt-BR");
+
+		DataEngine.editMultipleOptions(
+			fieldList = "Grid PT,Select from List PT,Single Selection PT,Multiple Selection PT",
+			fieldOptionValue = "Opção EDITADA",
+			optionsNumberList = "1,2,3,4,5");
+
+		DataEngine.editMultipleFieldLabel(
+			editFieldLabel = "EDITADA",
+			fieldList = "Grid PT,Select from List PT,Single Selection PT,Multiple Selection PT");
+
+		WebContentStructures.saveCP();
+
+		WebContentNavigator.gotoEditStructure(structureName = "WC Structure Title");
+
+		DataEngine.assertMultipleOptions(
+			fieldList = "Grid EDITED,Select from List EDITED,Single Selection EDITED,Multiple Selection EDITED",
+			optionsNumberList = "1,2,3,4,5",
+			rootOptionValue = "Option EDITED");
+
+		DataEngine.assertMultipleFieldLabel(
+			appendToFieldLabel = "EDITED",
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection");
+
+		PortletEntry.changeLocale(locale = "pt-BR");
+
+		DataEngine.assertMultipleOptions(
+			fieldList = "Grid PT EDITADA,Select from List PT EDITADA,Single Selection PT EDITADA,Multiple Selection PT EDITADA",
+			optionsNumberList = "1,2,3,4,5",
+			rootOptionValue = "Opção EDITADA");
+
+		DataEngine.assertMultipleFieldLabel(
+			appendToFieldLabel = "PT EDITADA",
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection");
+
+		PortletEntry.changeLocale(locale = "de-DE");
+
+		DataEngine.assertMultipleOptions(
+			fieldList = "Grid DE,Select from List DE,Single Selection DE,Multiple Selection DE",
+			optionsNumberList = "1,2,3,4,5",
+			rootOptionValue = "Möglichkeit");
+
+		DataEngine.assertMultipleFieldLabel(
+			appendToFieldLabel = "DE",
+			fieldList = "Grid,Select from List,Single Selection,Multiple Selection");
+
+		WebContentStructures.saveCP();
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
+
+		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Title");
+
+		WebContent.addCP(webContentTitle = "Web Content Title");
+
+		//DataEngine.assertMultipleFieldLabel(
+		//	fieldList = "Grid,Select from List,Single Selection,Multiple Selection",
+		//	appendToFieldLabel = "EDITED");
+
+		//PortletEntry.changeLocale(locale = "pt-BR");
+
+		//DataEngine.assertMultipleFieldLabel(
+		//	fieldList = "Grid,Select from List,Single Selection,Multiple Selection",
+		//	appendToFieldLabel = "PT EDITADA");
+
+		//PortletEntry.changeLocale(locale = "de-DE");
+
+		//DataEngine.assertMultipleFieldLabel(
+		//	fieldList = "Grid,Select from List,Single Selection,Multiple Selection",
+		//	appendToFieldLabel = "DE");
+
+	}
+
 	@description = "This is a test for LPS-122317. As Content Creator, I want to leverage the structures' translations without nested fields or fieldsets when creating a new Web Content"
 	@priority = "4"
 	test CheckDefaultWebContentTitleOnWebContentList {

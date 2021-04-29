@@ -144,6 +144,47 @@ definition {
 		}
 	}
 
+	macro addFieldMultipleOptions {
+		for (var field : list "${fieldList}") {
+			var auxFieldLabel = "${translationFieldLabel}";
+
+			if (isSet(translationFieldLabel)) {
+				auxFieldLabel = "${field} ${translationFieldLabel}";
+			}
+			else {
+				auxFieldLabel = "${field}";
+			}
+
+			if ("${areFieldsAdded}" == "false") {
+				DataEngine.addField(
+					fieldFieldLabel = "${auxFieldLabel}",
+					fieldName = "${field}");
+			}
+			else {
+				DataEngine.editFieldLabel(
+					fieldFieldLabel = "${field}",
+					fieldFieldLabelEdit = "${auxFieldLabel}");
+			}
+
+			for (var i : list "${optionsNumberList}") {
+				DataEngine.addFieldOption(
+					fieldFieldLabel = "${auxFieldLabel}",
+					index = "${i}",
+					optionValue = "${fieldOptionValue} ${i}");
+			}
+
+			if ("${field}" == "Grid") {
+				for (var i : list "${optionsNumberList}") {
+					DataEngine.addFieldOption(
+						fieldFieldLabel = "${auxFieldLabel}",
+						index = "${i}",
+						optionFieldLabel = "Columns",
+						optionValue = "${fieldOptionValue} ${i}");
+				}
+			}
+		}
+	}
+
 	macro addFieldNested {
 		if (IsElementNotPresent(key_tabName = "Builder", locator1 = "Sidebar#ACTIVE_TAB")) {
 			Navigator.gotoSidebarTab(tabName = "Builder");
@@ -703,10 +744,60 @@ definition {
 		}
 	}
 
+	macro assertMultipleFieldLabel {
+		for (var field : list "${fieldList}") {
+			var auxAppendToField = "${appendToFieldLabel}";
+
+			if (isSet(appendToFieldLabel)) {
+				auxAppendToField = "${field} ${appendToFieldLabel}";
+			}
+			else {
+				auxAppendToField = "${field}";
+			}
+
+			DataEngine.viewField(
+				fieldFieldLabel = "${auxAppendToField}",
+				fieldName = "${field}");
+		}
+	}
+
+	macro assertMultipleOptions {
+		for (var field : list "${fieldList}") {
+			var auxTranslationLabel = "${appendToFieldLabel}";
+
+			if (isSet(appendToFieldLabel)) {
+				auxAppendToField = "${field} ${appendToFieldLabel}";
+			}
+			else {
+				auxAppendToField = "${field}";
+			}
+
+			for (var i : list "${optionsNumberList}") {
+				DataEngine.assertOptionValueBuilder(
+					fieldFieldLabel = "${field}",
+					optionValue = "${rootOptionValue} ${i}",
+					rowNumber = "${i}");
+			}
+		}
+	}
+
 	macro assertNonLocalizableField {
 		AssertElementPresent(
 			key_fieldName = "${fieldFieldName}",
 			locator1 = "DataEngineRenderer#WEB_CONTENT_DISABLED_FIELD");
+	}
+
+	macro assertOptionValueBuilder {
+		var key_fieldFieldLabel = "${fieldFieldLabel}";
+		var key_rowNumber = "${rowNumber}";
+
+		Click(
+			key_fieldFieldLabel = "${fieldFieldLabel}",
+			locator1 = "DDMEditStructure#FORM_FIELD_CONTAINER_LABEL");
+
+		AssertTextEquals(
+			locator1 = "DDMEditStructure#OPTION_VALUE_FIELD",
+			value1 = "${optionValue}");
 	}
 
 	macro configureFieldsetsShowOrHideLabel {
@@ -1337,6 +1428,35 @@ definition {
 		}
 		else {
 			ItemSelector.uploadFile(uploadFileName = "${imageFileName}");
+		}
+	}
+
+	macro editMultipleFieldLabel {
+		for (var field : list "${fieldList}") {
+			DataEngine.editFieldLabel(
+				fieldFieldLabel = "${field}",
+				fieldFieldLabelEdit = "${field} ${editFieldLabel}");
+		}
+	}
+
+	macro editMultipleOptions {
+		for (var field : list "${fieldList}") {
+			for (var i : list "${optionsNumberList}") {
+				DataEngine.addFieldOption(
+					fieldFieldLabel = "${field}",
+					index = "${i}",
+					optionValue = "${fieldOptionValue} ${i}");
+			}
+
+			if (contains("${field}", "Grid")) {
+				for (var i : list "${optionsNumberList}") {
+					DataEngine.addFieldOption(
+						fieldFieldLabel = "${field}",
+						index = "${i}",
+						optionFieldLabel = "Columns",
+						optionValue = "${fieldOptionValue} ${i}");
+				}
+			}
 		}
 	}
 
